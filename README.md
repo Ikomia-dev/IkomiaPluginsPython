@@ -2,7 +2,7 @@
 Python plugins for Ikomia platform
 
 ### External resources
-Some of Ikomia plugins need external resources such as trained models. Here is the list for each plugin:
+Some of Ikomia plugins need external resources such as pre-trained models. Here is the list for each plugin:
 
 
 **Neural Style Transfer**
