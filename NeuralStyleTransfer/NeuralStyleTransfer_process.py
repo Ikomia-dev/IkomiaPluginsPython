@@ -149,7 +149,7 @@ class NeuralStyleTransferProcessFactory(PyDataProcess.CProcessFactory):
                                 "but 'painted' in the style of the style reference image. " \
                                 "This is implemented by optimizing the output image to match the content statistics of the content image " \
                                 "and the style statistics of the style reference image. These statistics are extracted from the images using a convolutional network. " \
-                                "<br><br>Implementation : Adrian Rosebrock" 
+                                "Implementation : Adrian Rosebrock." 
         #relative path -> as displayed in Ikomia application process tree
         self.info.path = "Plugins/Python/Art"
         self.info.version = "1.0.0"
