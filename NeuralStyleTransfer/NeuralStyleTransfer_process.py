@@ -143,24 +143,24 @@ class NeuralStyleTransferProcessFactory(PyDataProcess.CProcessFactory):
         PyDataProcess.CProcessFactory.__init__(self)
         #Set process information as string here
         self.info.name = "NeuralStyleTransfer"
-        self.info.shortDescription = "Neural network method to paint given image in the style of the style reference image"
+        self.info.shortDescription = "Neural network method to paint given image in the style of the reference image."
         self.info.description = "Neural style transfer is an optimization technique used to take two images—a content image " \
                                 "and a style reference image (such as an artwork by a famous painter)—and blend them together so the output image looks like the content image, " \
                                 "but 'painted' in the style of the style reference image. " \
                                 "This is implemented by optimizing the output image to match the content statistics of the content image " \
-                                "and the style statistics of the style reference image. These statistics are extracted from the images using a convolutional network."
+                                "and the style statistics of the style reference image. These statistics are extracted from the images using a convolutional network. " \
+                                "<br><br>Implementation : Adrian Rosebrock" 
         #relative path -> as displayed in Ikomia application process tree
         self.info.path = "Plugins/Python/Art"
         self.info.version = "1.0.0"
         self.info.iconPath = "icon/icon.png"
-        self.info.authors = "Adrian Rosebrock"
-        self.info.article = "Perceptual Losses for Real-Time Style Transfer and Super-Resolution. " \
-                            "Justin Johnson, Alexandre Alahi, Li Fei-Fei"
+        self.info.authors = "Justin Johnson, Alexandre Alahi, Li Fei-Fei"
+        self.info.article = "Perceptual Losses for Real-Time Style Transfer and Super-Resolution."
         self.info.journal = "ECCV"
         self.info.year = 2016
         self.info.license = "Free for personal or research use only"
         self.info.documentationLink = "https://www.pyimagesearch.com/2018/08/27/neural-style-transfer-with-opencv/"
-        self.info.repo = "https://github.com/jcjohnson/fast-neural-style"
+        self.info.repository = "https://github.com/jcjohnson/fast-neural-style"
         self.info.keywords = "art,painting,deep learning"
 
 
