@@ -20,3 +20,6 @@ Instance norm
 - [feathers.t7](http://cs.stanford.edu/people/jcjohns/fast-neural-style/models/instance_norm/feathers.t7)
 - [the_scream.t7](http://cs.stanford.edu/people/jcjohns/fast-neural-style/models/instance_norm/the_scream.t7)
 - [udnie.t7](http://cs.stanford.edu/people/jcjohns/fast-neural-style/models/instance_norm/udnie.t7)
+
+**Colorful Image Colorization**
+- [colorizationV2.caffemodel](http://eecs.berkeley.edu/~rich.zhang/projects/2016_colorization/files/demo_v2/colorization_release_v2.caffemodel)
