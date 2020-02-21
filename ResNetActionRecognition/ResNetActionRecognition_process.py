@@ -165,15 +165,15 @@ class ResNetActionRecognitionProcessFactory(PyDataProcess.CProcessFactory):
         # Set process information as string here
         self.info.name = "ResNet Action Recognition"
         self.info.shortDescription = "Human action recognition with spatio-temporal 3D CNNs."
-        self.info.description = "The purpose of this study is to determine whether currentvideo datasets have sufficient data " \
-                                "for training very deepconvolutional neural networks (CNNs) with spatio-temporalthree-dimensional " \
-                                "(3D) kernels. Recently, the performancelevels of 3D CNNs in the field of action recognition have " \
+        self.info.description = "The purpose of this study is to determine whether current video datasets have sufficient data " \
+                                "for training very deep convolutional neural networks (CNNs) with spatio-temporalthree-dimensional " \
+                                "(3D) kernels. Recently, the performance levels of 3D CNNs in the field of action recognition have " \
                                 "improved significantly. However, to date, conventional research has only explored relatively shallow  " \
-                                "3D architectures.We examine the architectures of various 3D CNNs from relatively shallow to very deep " \
+                                "3D architectures. We examine the architectures of various 3D CNNs from relatively shallow to very deep " \
                                 "ones on current video datasets. Based on the results of those experiments, the following conclusions " \
                                 "could be obtained: (i) ResNet-18 training resulted in significant overfitting for UCF-101, HMDB-51, " \
-                                "and ActivityNet but not for Kinetics. (ii) The Kinetics dataset hassufficient data for training of " \
-                                "deep 3D CNNs, and enablestraining of up to 152 ResNets layers, interestingly similarto 2D ResNets on ImageNet. " \
+                                "and ActivityNet but not for Kinetics. (ii) The Kinetics dataset has sufficient data for training of " \
+                                "deep 3D CNNs, and enables training of up to 152 ResNets layers, interestingly similar to 2D ResNets on ImageNet. " \
                                 "ResNeXt-101 achieved 78.4% average accuracy on the Kinetics test set. (iii) Kinetics pre-trained simple 3D " \
                                 "architectures outperforms complex 2D architectures, and the pretrained ResNeXt-101 achieved 94.5% and 70.2% " \
                                 "on UCF-101 and HMDB-51, respectively. The use of 2D CNNs trained on ImageNet has produced significant progress " \
