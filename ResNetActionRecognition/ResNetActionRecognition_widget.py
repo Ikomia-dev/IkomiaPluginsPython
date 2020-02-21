@@ -90,16 +90,17 @@ class ResNetActionRecognitionWidget(PyCore.CProtocolTaskWidget):
         self.combo_target.setCurrentIndex(self.combo_target.findData(self.param.target))
         self.combo_target.currentIndexChanged.connect(self.on_param_changed)
 
-        # Fill layout        
-        self.grid_layout.addWidget(label_duration, 0, 0, 1, 1)
-        self.grid_layout.addWidget(self.spin_duration, 0, 1, 1, 1)
-        self.grid_layout.addWidget(self.check_rolling, 1, 0, 1, 2)
+        # Fill layout       
+        self.grid_layout.addWidget(label_backend, 0, 0, 1, 1)
+        self.grid_layout.addWidget(self.combo_backend, 0, 1, 1, 1)
+        self.grid_layout.addWidget(label_target, 1, 0, 1, 1)
+        self.grid_layout.addWidget(self.combo_target, 1, 1, 1, 1)
         self.grid_layout.addWidget(label_model, 2, 0, 1, 1)
         self.grid_layout.addWidget(self.combo_models, 2, 1, 1, 1)
-        self.grid_layout.addWidget(label_backend, 3, 0, 1, 1)
-        self.grid_layout.addWidget(self.combo_backend, 3, 1, 1, 1)
-        self.grid_layout.addWidget(label_target, 4, 0, 1, 1)
-        self.grid_layout.addWidget(self.combo_target, 4, 1, 1, 1)
+        self.grid_layout.addWidget(label_duration, 3, 0, 1, 1)
+        self.grid_layout.addWidget(self.spin_duration, 3, 1, 1, 1)
+        self.grid_layout.addWidget(self.check_rolling, 4, 0, 1, 2)
+        
 
         # PyQt -> Qt wrapping
         layoutPtr = QtConversion.PyQtToQt(self.grid_layout)
