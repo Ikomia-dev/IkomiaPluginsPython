@@ -22,19 +22,52 @@ class YolactWidget(PyCore.CProtocolTaskWidget):
             self.parameters = param
 
         # Create layout : QGridLayout by default
-        self.gridLayout = QGridLayout()
+        self.grid_layout = QGridLayout()
+
+        # Confidence
+        label_confidence = QLabel("Confidence")
+        self.spin_confidence = QDoubleSpinBox()
+        self.spin_confidence.setRange(0, 1)
+        self.spin_confidence.setSingleStep(0.05)
+        self.spin_confidence.setDecimals(2)
+        self.spin_confidence.setValue(self.parameters.confidence)
+
+        # Predictions count
+        label_pred_count = QLabel("Max predictions count")
+        self.spin_pred_count = QSpinBox()
+        self.spin_pred_count.setRange(1, 100)
+        self.spin_pred_count.setSingleStep(1)
+        self.spin_pred_count.setValue(self.parameters.top_k)
+
+        # Mask transparency
+        label_mask_alpha = QLabel("Mask transparency")
+        self.spin_mask_alpha = QDoubleSpinBox()
+        self.spin_mask_alpha.setRange(0, 1)
+        self.spin_mask_alpha.setSingleStep(0.05)
+        self.spin_mask_alpha.setDecimals(2)
+        self.spin_mask_alpha.setValue(self.parameters.mask_alpha)
+
+        # Fill layout
+        self.grid_layout.addWidget(label_confidence, 0, 0, 1, 1)
+        self.grid_layout.addWidget(self.spin_confidence, 0, 1, 1, 1)
+        self.grid_layout.addWidget(label_pred_count, 1, 0, 1, 1)
+        self.grid_layout.addWidget(self.spin_pred_count, 1, 1, 1, 1)
+        self.grid_layout.addWidget(label_mask_alpha, 2, 0, 1, 1)
+        self.grid_layout.addWidget(self.spin_mask_alpha, 2, 1, 1, 1)
+
         # PyQt -> Qt wrapping
-        layoutPtr = QtConversion.PyQtToQt(self.gridLayout)
+        layout_ptr = QtConversion.PyQtToQt(self.grid_layout)
 
         # Set widget layout
-        self.setLayout(layoutPtr)
+        self.setLayout(layout_ptr)
 
 
     def onApply(self):
         # Apply button clicked slot
-
         # Get parameters from widget
-        # Example : self.parameters.windowSize = self.spinWindowSize.value()
+        self.parameters.confidence = self.spin_confidence.value()
+        self.parameters.top_k = self.spin_pred_count.value()
+        self.parameters.mask_alpha = self.spin_mask_alpha.value()
 
         # Send signal to launch the process
         self.emitApply(self.parameters)
