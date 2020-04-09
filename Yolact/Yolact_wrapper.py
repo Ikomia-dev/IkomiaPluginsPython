@@ -4,7 +4,7 @@ import cv2
 from collections import defaultdict
 from yolact_git.yolact import Yolact
 from yolact_git.utils.functions import SavePath
-from yolact_git.utils.augmentations import FastBaseTransform
+from yolact_git.utils.augmentations import FastBaseTransform, FastBaseTransformCPU
 from yolact_git.data import cfg, set_cfg, COLORS
 from yolact_git.layers.output_utils import postprocess
 
@@ -14,7 +14,12 @@ color_cache = defaultdict(lambda: {})
 
 def forward(src_img, param):
     img_numpy = None
-    use_cuda = torch.cuda.device_count() >= 1
+    use_cuda = False
+    if param.device == "cuda":
+        use_cuda = torch.cuda.device_count() >= 1
+        if use_cuda == False:
+            raise ValueError("No CUDA driver!")
+    
     init_config(param)
 
     with torch.no_grad():
@@ -25,7 +30,8 @@ def forward(src_img, param):
             torch.set_default_tensor_type('torch.FloatTensor')
 
         net = Yolact()
-        net.load_weights(param.model_path)
+        device=torch.device(param.device)
+        net.load_weights(param.model_path, device)
         net.eval()
 
         if use_cuda:
@@ -37,10 +43,11 @@ def forward(src_img, param):
         frame = None
         if use_cuda:
             frame = torch.from_numpy(src_img).cuda().float()
+            batch = FastBaseTransform()(frame.unsqueeze(0))
         else:
             frame = torch.from_numpy(src_img).float()
+            batch = FastBaseTransformCPU()(frame.unsqueeze(0))
 
-        batch = FastBaseTransform()(frame.unsqueeze(0))
         predictions = net(batch)
         img_numpy = manage_outputs(predictions, frame, param)
 
@@ -65,7 +72,7 @@ def manage_outputs(predictions, img, param):
     mask_numpy = None
 
     # Put values in range [0 - 1]
-    img_gpu = img / 255.0
+    #img_gpu = img / 255.0
     h, w, _ = img.shape
 
     # Post-processing
@@ -117,24 +124,28 @@ def manage_outputs(predictions, img, param):
         masks = masks[:num_dets_to_consider, :, :, None]
 
         # Prepare the RGB images for each mask given their color (size [num_dets, h, w, 1])
-        colors = torch.cat(
-            [get_color(j, on_gpu=img_gpu.device.index).view(1, 1, 1, 3) for j in range(num_dets_to_consider)], dim=0)
-        masks_color = masks.repeat(1, 1, 1, 3) * colors * param.mask_alpha
+        # if param.device == 'cuda':
+        #     colors = torch.cat(
+        #         [get_color(j, on_gpu=img_gpu.device.index).view(1, 1, 1, 3) for j in range(num_dets_to_consider)], dim=0)
+        # else:
+        #     colors = torch.cat([torch.FloatTensor(get_color(j, on_gpu=img_gpu.device.index)).view(1, 1, 1, 3) for j in range(num_dets_to_consider)], dim=0)
+        #masks_color = masks.repeat(1, 1, 1, 3) * colors * param.mask_alpha
 
         # This is 1 everywhere except for 1-mask_alpha where the mask is
         inv_alph_masks = masks * (-param.mask_alpha) + 1
 
         # I did the math for this on pen and paper. This whole block should be equivalent to:
-        #    for j in range(num_dets_to_consider):
-        #        img_gpu = img_gpu * inv_alph_masks[j] + masks_color[j]
-        masks_color_summand = masks_color[0]
+        # for j in range(num_dets_to_consider):
+        #     img_gpu = img_gpu * inv_alph_masks[j] + masks_color[j]
 
-        if num_dets_to_consider > 1:
-            inv_alph_cumul = inv_alph_masks[:(num_dets_to_consider - 1)].cumprod(dim=0)
-            masks_color_cumul = masks_color[1:] * inv_alph_cumul
-            masks_color_summand += masks_color_cumul.sum(dim=0)
-
-        img_gpu = img_gpu * inv_alph_masks.prod(dim=0) + masks_color_summand
+        # masks_color_summand = masks_color[0]
+        #
+        # if num_dets_to_consider > 1:
+        #     inv_alph_cumul = inv_alph_masks[:(num_dets_to_consider - 1)].cumprod(dim=0)
+        #     masks_color_cumul = masks_color[1:] * inv_alph_cumul
+        #     masks_color_summand += masks_color_cumul.sum(dim=0)
+        #
+        # img_gpu = img_gpu * inv_alph_masks.prod(dim=0) + masks_color_summand
 
         # Cumulative mask
         mask_or = masks[0]
@@ -146,15 +157,18 @@ def manage_outputs(predictions, img, param):
 
     # Then draw the stuff that needs to be done on the cpu
     # Note, make sure this is a uint8 tensor or opencv will not anti alias text for whatever reason
-    img_numpy = (img_gpu * 255).byte().cpu().numpy()
+    #img_numpy = (img_gpu * 255).byte().cpu().numpy()
+    img_numpy = img.byte().cpu().numpy()
 
     if num_dets_to_consider == 0:
         return img_numpy
 
+    colorvec = [[0,0,0]]
     if display_text or display_bboxes:
-        for j in reversed(range(num_dets_to_consider)):
+        for j in (range(num_dets_to_consider)):
             x1, y1, x2, y2 = boxes[j, :]
             color = get_color(j)
+            colorvec.append(list(color))
             score = scores[j]
 
             if display_bboxes:
@@ -177,6 +191,6 @@ def manage_outputs(predictions, img, param):
                 cv2.putText(img_numpy, text_str, text_pt, font_face, font_scale, text_color, font_thickness,
                             cv2.LINE_AA)
 
-    return mask_numpy, img_numpy
+    return mask_numpy, img_numpy, colorvec
 
 

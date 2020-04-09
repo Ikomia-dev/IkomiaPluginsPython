@@ -47,6 +47,13 @@ class YolactWidget(PyCore.CProtocolTaskWidget):
         self.spin_mask_alpha.setDecimals(2)
         self.spin_mask_alpha.setValue(self.parameters.mask_alpha)
 
+        # Device
+        self.checkbox = QCheckBox("CUDA")
+        if self.parameters.device == "cuda":
+            self.checkbox.setChecked(True)
+        else:
+            self.checkbox.setChecked(False)
+
         # Fill layout
         self.grid_layout.addWidget(label_confidence, 0, 0, 1, 1)
         self.grid_layout.addWidget(self.spin_confidence, 0, 1, 1, 1)
@@ -54,6 +61,7 @@ class YolactWidget(PyCore.CProtocolTaskWidget):
         self.grid_layout.addWidget(self.spin_pred_count, 1, 1, 1, 1)
         self.grid_layout.addWidget(label_mask_alpha, 2, 0, 1, 1)
         self.grid_layout.addWidget(self.spin_mask_alpha, 2, 1, 1, 1)
+        self.grid_layout.addWidget(self.checkbox, 3, 0, 1, 2)
 
         # PyQt -> Qt wrapping
         layout_ptr = QtConversion.PyQtToQt(self.grid_layout)
@@ -68,6 +76,10 @@ class YolactWidget(PyCore.CProtocolTaskWidget):
         self.parameters.confidence = self.spin_confidence.value()
         self.parameters.top_k = self.spin_pred_count.value()
         self.parameters.mask_alpha = self.spin_mask_alpha.value()
+        if self.checkbox.isChecked():
+            self.parameters.device = "cuda"
+        else:
+            self.parameters.device = "cpu"
 
         # Send signal to launch the process
         self.emitApply(self.parameters)

@@ -48,7 +48,7 @@ def postprocess(det_output, w, h, batch_idx=0, interpolation_mode='bilinear',
         
         if dets['score'].size(0) == 0:
             return [torch.Tensor()] * 4
-    
+
     # Actually extract everything from dets now
     classes = dets['class']
     boxes   = dets['box']
@@ -58,15 +58,16 @@ def postprocess(det_output, w, h, batch_idx=0, interpolation_mode='bilinear',
     if cfg.mask_type == mask_type.lincomb and cfg.eval_mask_branch:
         # At this points masks is only the coefficients
         proto_data = dets['proto']
-        
+
         # Test flag, do not upvote
         if cfg.mask_proto_debug:
             np.save('scripts/proto.npy', proto_data.cpu().numpy())
-        
+
         if visualize_lincomb:
             display_lincomb(proto_data, masks)
 
         masks = proto_data @ masks.t()
+        #masks = torch.matmul(proto_data, masks.t())
         masks = cfg.mask_proto_mask_activation(masks)
 
         # Crop masks before upsampling because you know why
@@ -93,7 +94,6 @@ def postprocess(det_output, w, h, batch_idx=0, interpolation_mode='bilinear',
         # Binarize the masks
         masks.gt_(0.5)
 
-    
     boxes[:, 0], boxes[:, 2] = sanitize_coordinates(boxes[:, 0], boxes[:, 2], w, cast=False)
     boxes[:, 1], boxes[:, 3] = sanitize_coordinates(boxes[:, 1], boxes[:, 3], h, cast=False)
     boxes = boxes.long()

@@ -21,6 +21,7 @@ class YolactParam(PyCore.CProtocolTaskParam):
         self.confidence = 0.15
         self.top_k = 15
         self.mask_alpha = 0.45
+        self.device = "cuda"
 
 
     def setParamMap(self, paramMap):
@@ -29,6 +30,7 @@ class YolactParam(PyCore.CProtocolTaskParam):
         self.confidence = float(paramMap["confidence"])
         self.top_k = float(paramMap["top_k"])
         self.mask_alpha = float(paramMap["mask_alpha"])
+        self.device = paramMap["device"]
 
 
     def getParamMap(self):
@@ -38,6 +40,7 @@ class YolactParam(PyCore.CProtocolTaskParam):
         paramMap["confidence"] = str(self.confidence)
         paramMap["top_k"] = str(self.top_k)
         paramMap["mask_alpha"] = str(self.mask_alpha)
+        paramMap["device"] = self.device
         return paramMap
 
 
@@ -53,7 +56,6 @@ class YolactProcess(PyDataProcess.CImageProcess2d):
         #Add input/output of the process here
         self.setOutputDataType(PyCore.TaskIOData.IMAGE_LABEL, 0)
         self.addOutput(PyCore.CImageProcessIO(PyCore.TaskIOData.IMAGE))
-
         self.net = None
         self.class_names = []
 
@@ -89,7 +91,7 @@ class YolactProcess(PyDataProcess.CImageProcess2d):
         param = self.getParam()
 
         # Inference
-        mask, dst_img = yw.forward(src_img, param)
+        mask, dst_img, colorvec = yw.forward(src_img, param)
 
         # Step progress bar:
         self.emitStepProgress()
@@ -97,6 +99,7 @@ class YolactProcess(PyDataProcess.CImageProcess2d):
         # Get mask output :
         mask_output = self.getOutput(0)
         mask_output.setImage(mask)
+        self.setOutputColorMap(1, 0, colorvec)
 
         # Get image output :
         img_output = self.getOutput(1)
