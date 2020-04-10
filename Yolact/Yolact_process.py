@@ -56,6 +56,8 @@ class YolactProcess(PyDataProcess.CImageProcess2d):
         #Add input/output of the process here
         self.setOutputDataType(PyCore.TaskIOData.IMAGE_LABEL, 0)
         self.addOutput(PyCore.CImageProcessIO(PyCore.TaskIOData.IMAGE))
+        # Add graphics output
+        self.addOutput(PyCore.CGraphicsOutput())
         self.net = None
         self.class_names = []
 
@@ -90,8 +92,13 @@ class YolactProcess(PyDataProcess.CImageProcess2d):
         # Get parameters :
         param = self.getParam()
 
+        # Init graphics output
+        graphics_output = self.getOutput(2)
+        graphics_output.setNewLayer("Yolact")
+        graphics_output.setImageIndex(1)
+
         # Inference
-        mask, dst_img, colorvec = yw.forward(src_img, param)
+        mask, dst_img, colorvec = yw.forward(src_img, param, graphics_output)
 
         # Step progress bar:
         self.emitStepProgress()

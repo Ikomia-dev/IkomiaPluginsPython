@@ -12,7 +12,7 @@ from yolact_git.layers.output_utils import postprocess
 color_cache = defaultdict(lambda: {})
 
 
-def forward(src_img, param):
+def forward(src_img, param, graphics_output):
     img_numpy = None
     use_cuda = False
     if param.device == "cuda":
@@ -49,7 +49,7 @@ def forward(src_img, param):
             batch = FastBaseTransformCPU()(frame.unsqueeze(0))
 
         predictions = net(batch)
-        img_numpy = manage_outputs(predictions, frame, param)
+        img_numpy = manage_outputs(predictions, frame, param, graphics_output)
 
     return img_numpy
 
@@ -63,7 +63,7 @@ def init_config(param):
 
 # Most parts come from function prep_display from yolact_git/eval.py
 # Without command line arguments
-def manage_outputs(predictions, img, param):
+def manage_outputs(predictions, img, param, graphics_output):
     crop_mask = True
     display_masks = True
     display_text = True
@@ -148,9 +148,13 @@ def manage_outputs(predictions, img, param):
         # img_gpu = img_gpu * inv_alph_masks.prod(dim=0) + masks_color_summand
 
         # Cumulative mask
-        mask_or = masks[0]
+
+        # For each object, we create a mask with label values for display purpose
+        # For overlapping objects, we take those with the better probability with a MAX operator
+        # that's why we reverse the mask weights
+        mask_or = masks[0]*num_dets_to_consider
         for j in range(1, num_dets_to_consider):
-            mask_or += masks[j] * (j + 1)
+            mask_or = torch.max(mask_or, masks[j] * (num_dets_to_consider-j))
 
         # Get the numpy array of the mask
         mask_numpy = mask_or.byte().cpu().numpy()
@@ -165,31 +169,33 @@ def manage_outputs(predictions, img, param):
 
     colorvec = [[0,0,0]]
     if display_text or display_bboxes:
-        for j in (range(num_dets_to_consider)):
+        for j in reversed(range(num_dets_to_consider)):
             x1, y1, x2, y2 = boxes[j, :]
             color = get_color(j)
             colorvec.append(list(color))
             score = scores[j]
 
             if display_bboxes:
-                cv2.rectangle(img_numpy, (x1, y1), (x2, y2), color, 1)
+                #cv2.rectangle(img_numpy, (x1, y1), (x2, y2), color, 1)
+                graphics_output.addRectangle(float(x1), float(y1), float(x2-x1), float(y2-y1))
 
             if display_text:
                 _class = cfg.dataset.class_names[classes[j]]
                 text_str = '%s: %.2f' % (_class, score) if display_scores else _class
 
-                font_face = cv2.FONT_HERSHEY_DUPLEX
-                font_scale = 0.6
-                font_thickness = 1
+                #font_face = cv2.FONT_HERSHEY_DUPLEX
+                #font_scale = 0.6
+                #font_thickness = 1
 
-                text_w, text_h = cv2.getTextSize(text_str, font_face, font_scale, font_thickness)[0]
+                #text_w, text_h = cv2.getTextSize(text_str, font_face, font_scale, font_thickness)[0]
 
-                text_pt = (x1, y1 - 3)
-                text_color = [255, 255, 255]
+                #text_pt = (x1, y1 - 3)
+                #text_color = [255, 255, 255]
 
-                cv2.rectangle(img_numpy, (x1, y1), (x1 + text_w, y1 - text_h - 4), color, -1)
-                cv2.putText(img_numpy, text_str, text_pt, font_face, font_scale, text_color, font_thickness,
-                            cv2.LINE_AA)
+                #cv2.rectangle(img_numpy, (x1, y1), (x1 + text_w, y1 - text_h - 4), color, -1)
+                #cv2.putText(img_numpy, text_str, text_pt, font_face, font_scale, text_color, font_thickness,
+                #            cv2.LINE_AA)
+                graphics_output.addText(text_str, float(x1), float(y1))
 
     return mask_numpy, img_numpy, colorvec
 
