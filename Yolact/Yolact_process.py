@@ -98,7 +98,7 @@ class YolactProcess(PyDataProcess.CImageProcess2d):
         graphics_output.setImageIndex(1)
 
         # Inference
-        mask, dst_img, colorvec = yw.forward(src_img, param, graphics_output)
+        mask, colorvec = yw.forward(src_img, param, graphics_output)
 
         # Step progress bar:
         self.emitStepProgress()
@@ -109,8 +109,7 @@ class YolactProcess(PyDataProcess.CImageProcess2d):
         self.setOutputColorMap(1, 0, colorvec)
 
         # Get image output :
-        img_output = self.getOutput(1)
-        img_output.setImage(dst_img)
+        self.forwardInputImage(0, 1)
 
         # Step progress bar:
         self.emitStepProgress()

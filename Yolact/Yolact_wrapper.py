@@ -1,3 +1,4 @@
+import PyCore
 import torch
 import torch.backends.cudnn as torch_cudnn
 import cv2
@@ -69,10 +70,8 @@ def manage_outputs(predictions, img, param, graphics_output):
     display_text = True
     display_bboxes = True
     display_scores = True
-    mask_numpy = None
 
     # Put values in range [0 - 1]
-    #img_gpu = img / 255.0
     h, w, _ = img.shape
 
     # Post-processing
@@ -123,30 +122,6 @@ def manage_outputs(predictions, img, param, graphics_output):
         # After this, mask is of size [num_dets, h, w, 1]
         masks = masks[:num_dets_to_consider, :, :, None]
 
-        # Prepare the RGB images for each mask given their color (size [num_dets, h, w, 1])
-        # if param.device == 'cuda':
-        #     colors = torch.cat(
-        #         [get_color(j, on_gpu=img_gpu.device.index).view(1, 1, 1, 3) for j in range(num_dets_to_consider)], dim=0)
-        # else:
-        #     colors = torch.cat([torch.FloatTensor(get_color(j, on_gpu=img_gpu.device.index)).view(1, 1, 1, 3) for j in range(num_dets_to_consider)], dim=0)
-        #masks_color = masks.repeat(1, 1, 1, 3) * colors * param.mask_alpha
-
-        # This is 1 everywhere except for 1-mask_alpha where the mask is
-        inv_alph_masks = masks * (-param.mask_alpha) + 1
-
-        # I did the math for this on pen and paper. This whole block should be equivalent to:
-        # for j in range(num_dets_to_consider):
-        #     img_gpu = img_gpu * inv_alph_masks[j] + masks_color[j]
-
-        # masks_color_summand = masks_color[0]
-        #
-        # if num_dets_to_consider > 1:
-        #     inv_alph_cumul = inv_alph_masks[:(num_dets_to_consider - 1)].cumprod(dim=0)
-        #     masks_color_cumul = masks_color[1:] * inv_alph_cumul
-        #     masks_color_summand += masks_color_cumul.sum(dim=0)
-        #
-        # img_gpu = img_gpu * inv_alph_masks.prod(dim=0) + masks_color_summand
-
         # Cumulative mask
 
         # For each object, we create a mask with label values for display purpose
@@ -159,15 +134,11 @@ def manage_outputs(predictions, img, param, graphics_output):
         # Get the numpy array of the mask
         mask_numpy = mask_or.byte().cpu().numpy()
 
-    # Then draw the stuff that needs to be done on the cpu
-    # Note, make sure this is a uint8 tensor or opencv will not anti alias text for whatever reason
-    #img_numpy = (img_gpu * 255).byte().cpu().numpy()
-    img_numpy = img.byte().cpu().numpy()
+    colorvec = [[0,0,0]]
 
     if num_dets_to_consider == 0:
-        return img_numpy
+        return mask_numpy, colorvec
 
-    colorvec = [[0,0,0]]
     if display_text or display_bboxes:
         for j in reversed(range(num_dets_to_consider)):
             x1, y1, x2, y2 = boxes[j, :]
@@ -176,27 +147,18 @@ def manage_outputs(predictions, img, param, graphics_output):
             score = scores[j]
 
             if display_bboxes:
-                #cv2.rectangle(img_numpy, (x1, y1), (x2, y2), color, 1)
-                graphics_output.addRectangle(float(x1), float(y1), float(x2-x1), float(y2-y1))
+                rect_prop = PyCore.GraphicsRectProperty()
+                rect_prop.pen_color = list(color)
+                graphics_output.addRectangle(float(x1), float(y1), float(x2-x1), float(y2-y1), rect_prop)
 
             if display_text:
                 _class = cfg.dataset.class_names[classes[j]]
                 text_str = '%s: %.2f' % (_class, score) if display_scores else _class
 
-                #font_face = cv2.FONT_HERSHEY_DUPLEX
-                #font_scale = 0.6
-                #font_thickness = 1
+                text_prop = PyCore.GraphicsTextProperty()
+                text_prop.bold = True
+                graphics_output.addText(text_str, float(x1), float(y1), text_prop)
 
-                #text_w, text_h = cv2.getTextSize(text_str, font_face, font_scale, font_thickness)[0]
-
-                #text_pt = (x1, y1 - 3)
-                #text_color = [255, 255, 255]
-
-                #cv2.rectangle(img_numpy, (x1, y1), (x1 + text_w, y1 - text_h - 4), color, -1)
-                #cv2.putText(img_numpy, text_str, text_pt, font_face, font_scale, text_color, font_thickness,
-                #            cv2.LINE_AA)
-                graphics_output.addText(text_str, float(x1), float(y1))
-
-    return mask_numpy, img_numpy, colorvec
+    return mask_numpy, colorvec
 
 
