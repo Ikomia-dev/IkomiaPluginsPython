@@ -26,7 +26,6 @@ class NeuralStyleTransferProcessParam(PyCore.CProtocolTaskParam):
         # Parameters values are stored as string and accessible like a python dict
         self.model_path = str(paramMap["model_path"])
         self.image_path = str(paramMap["image_path"])
-        print("SetParamMap")
 
 
     def getParamMap(self):

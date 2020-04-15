@@ -139,7 +139,6 @@ class NeuralStyleTransferWidget(PyCore.CProtocolTaskWidget):
     def onApply(self):
         # Apply button has been pressed
         # Get parameters from widget
-        print("onApply")
         self.parameters.update = self.param_changed
         self.parameters.backend = self.combo_backend.currentData()
         self.parameters.target = self.combo_target.currentData()
