@@ -1,8 +1,8 @@
 --find-links https://download.pytorch.org/whl/torch_stable.html
+Cython
 torch >= 1.0.1
 torchvision
-Cython
 pillow
-pycocotools-fix; sys_platform != 'win32'
-git+https://github.com/philferriere/cocoapi.git#subdirectory=PythonAPI; sys_platform == 'win32'
+# pycocotools-fix; sys_platform != 'win32'
+# git+https://github.com/philferriere/cocoapi.git#subdirectory=PythonAPI; sys_platform == 'win32'
 matplotlib

@@ -1,6 +1,6 @@
 import scipy.io, scipy.ndimage
 import os.path, json
-import pycocotools.mask
+#import pycocotools.mask
 import numpy as np
 
 def mask2bbox(mask):

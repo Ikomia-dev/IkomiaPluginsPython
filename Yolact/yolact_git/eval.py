@@ -6,7 +6,7 @@ from .layers.box_utils import jaccard, center_size, mask_iou
 from .utils import timer
 from .utils.functions import SavePath
 from .layers.output_utils import postprocess, undo_image_transformation
-import pycocotools
+#import pycocotools
 
 from .data import cfg, set_cfg, set_dataset
 

@@ -381,16 +381,6 @@ class FastMaskIoUNet(ScriptModuleWrapper):
 
 class Yolact(nn.Module):
     """
-
-
-    ██╗   ██╗ ██████╗ ██╗      █████╗  ██████╗████████╗
-    ╚██╗ ██╔╝██╔═══██╗██║     ██╔══██╗██╔════╝╚══██╔══╝
-     ╚████╔╝ ██║   ██║██║     ███████║██║        ██║   
-      ╚██╔╝  ██║   ██║██║     ██╔══██║██║        ██║   
-       ██║   ╚██████╔╝███████╗██║  ██║╚██████╗   ██║   
-       ╚═╝    ╚═════╝ ╚══════╝╚═╝  ╚═╝ ╚═════╝   ╚═╝ 
-
-
     You can set the arguments by changing them in the backbone config object in config.py.
 
     Parameters (in cfg.backbone):
