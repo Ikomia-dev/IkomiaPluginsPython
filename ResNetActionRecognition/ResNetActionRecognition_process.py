@@ -182,7 +182,7 @@ class ResNetActionRecognitionProcessFactory(PyDataProcess.CProcessFactory):
                                 "models used in this study are publicly available."
         # relative path -> as displayed in Ikomia application process tree
         self.info.path = "Plugins/Python/Detection"
-        self.info.version = "1.0.0"
+        self.info.version = "1.0.1"
         self.info.iconPath = "icon/icon.png"
         self.info.authors = "Kensho Hara, Hirokatsu Kataoka, Yutaka Satoh"
         self.info.article = "Can Spatiotemporal 3D CNNs Retrace the History of 2D CNNs and ImageNet?"

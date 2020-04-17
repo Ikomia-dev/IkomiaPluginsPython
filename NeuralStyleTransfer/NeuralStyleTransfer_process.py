@@ -151,7 +151,7 @@ class NeuralStyleTransferProcessFactory(PyDataProcess.CProcessFactory):
                                 "Implementation : Adrian Rosebrock." 
         #relative path -> as displayed in Ikomia application process tree
         self.info.path = "Plugins/Python/Art"
-        self.info.version = "1.0.0"
+        self.info.version = "1.0.1"
         self.info.iconPath = "icon/icon.png"
         self.info.authors = "Justin Johnson, Alexandre Alahi, Li Fei-Fei"
         self.info.article = "Perceptual Losses for Real-Time Style Transfer and Super-Resolution."
