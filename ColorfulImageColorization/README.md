@@ -1,4 +1,4 @@
-## Colorful Image Colorization for Ikomia
+# Colorful Image Colorization for Ikomia
 
 This plugin is based on [richzhang project](https://github.com/richzhang/colorization).
 
