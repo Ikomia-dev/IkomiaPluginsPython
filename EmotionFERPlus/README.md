@@ -1,4 +1,4 @@
-# EmotionFERPlus for Ikomia
+# Emotion FER Plus for Ikomia
 
 This plugin is based on the [Microsoft project](https://github.com/microsoft/FERPlus).
 
