@@ -1,5 +1,8 @@
 # Covid-Net for Ikomia
 
+![alt text](https://github.com/lindawangg/COVID-Net/blob/master/assets/covidnet-cxr-small-exp.png "A COVID-Net scan of a chest X-ray")
+*Image Credit: DarwinAI*
+
 This plugin is based on [lindawangg project](https://github.com/lindawangg/COVID-Net).
 
 It provides a simple way to evaluate the COVID-Net pre-trained model thanks to the Ikomia software.
