@@ -1,5 +1,8 @@
 # IkomiaPluginsPython
-Python plugins for Ikomia platform
+
+![](https://ikomia.com/static/showcase/img/home/plugin.png)
+
+Python plugins for Ikomia platform:
 
 - [Colorful Image Colorization](https://github.com/Ikomia-dev/IkomiaPluginsPython/tree/master/ColorfulImageColorization): automatic colorization
 - [Covid-Net](https://github.com/Ikomia-dev/IkomiaPluginsPython/tree/master/CovidNet): COVID-19 diagnosis predictions from chest radiography images. **For research purpose only**.
