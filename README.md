@@ -18,7 +18,10 @@ Ikomia plugins are created for the Ikomia platform, they are fully adn directly 
 1. Create Ikomia account for free [here](https://ikomia.com/accounts/signup/) (if you don't have one)
 2. Download [Ikomia software](https://ikomia.com/en/download) and install it (simple wizard installer)
 3. Launch the software and log in with your credentials
-4. Open Ikomia Store window (and install Covid-Net plugin
+4. Open the Ikomia Store window, search for your algorithm and install it with the corresponding button
+5. Open your input data (images, videos or cameras)
+6. In the process pane, search for your new installed plugin and apply it.
+7. Enjoy the results!
 
 ### External resources
 Some of Ikomia plugins need external resources like pre-trained models. In this case, plugin directory contains the model directly or a text file (download_model.txt) including the URL to download it.
