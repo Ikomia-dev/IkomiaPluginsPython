@@ -1,3 +1,5 @@
+# Ikomia Covid-Net plugin
+
 This plugin is based on [lindawangg project](https://github.com/lindawangg/COVID-Net).
 
 It provides a simple way to evaluate the COVID-Net pre-trained model thanks to the Ikomia software.
