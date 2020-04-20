@@ -1,4 +1,4 @@
-# Ikomia Covid-Net plugin
+# Covid-Net for Ikomia
 
 This plugin is based on [lindawangg project](https://github.com/lindawangg/COVID-Net).
 
