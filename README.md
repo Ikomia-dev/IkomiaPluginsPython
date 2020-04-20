@@ -13,7 +13,7 @@ All these plugins are available in the Ikomia Store and can be installed in one-
 ### How to use
 As is, Ikomia plugins code can't be executed in a simple Python environment. You will need to add some extra code to convert it into Python script and manage input/output data.
 
-Ikomia plugins are created for the Ikomia platform, they are fully adn directly functionnal with no code in the Ikomia software. Here are the steps to use Ikomia:
+Ikomia plugins are created for the Ikomia platform, they are fully and directly functional with no code in the Ikomia software. Here are the steps to use Ikomia:
 
 1. Create Ikomia account for free [here](https://ikomia.com/accounts/signup/) (if you don't have one)
 2. Download [Ikomia software](https://ikomia.com/en/download) and install it (simple wizard installer)
