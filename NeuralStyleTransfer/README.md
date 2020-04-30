@@ -19,3 +19,16 @@ Instance norm
 - [feathers.t7](http://cs.stanford.edu/people/jcjohns/fast-neural-style/models/instance_norm/feathers.t7)
 - [the_scream.t7](http://cs.stanford.edu/people/jcjohns/fast-neural-style/models/instance_norm/the_scream.t7)
 - [udnie.t7](http://cs.stanford.edu/people/jcjohns/fast-neural-style/models/instance_norm/udnie.t7)
+
+### How to use it?
+Here are the steps:
+
+1. Create Ikomia account for free [here](https://ikomia.com/accounts/signup/) (if you don't have one)
+2. Install [Ikomia software](https://ikomia.com/en/download)
+3. Launch the software and log in with your credentials
+4. Open Ikomia Store and install NeuralStyleTransfer plugin
+5. Open your images
+6. Add NeuralStyleTransfer algorithm to the workflow
+7. Start the workflow and evaluate the prediction
+
+That's it!

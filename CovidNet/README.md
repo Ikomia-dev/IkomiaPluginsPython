@@ -7,6 +7,7 @@ This plugin is based on [lindawangg project](https://github.com/lindawangg/COVID
 
 It provides a simple way to evaluate the COVID-Net pre-trained model thanks to the Ikomia software.
 
+### How to use it?
 Here are the steps:
 
 1. Create Ikomia account for free [here](https://ikomia.com/accounts/signup/) (if you don't have one)
