@@ -1,5 +1,3 @@
-import sys
-import numpy
 import PyCore
 import PyDataProcess
 import scikit_MorphoSnakes_process as processMod
