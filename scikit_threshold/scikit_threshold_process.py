@@ -1,7 +1,6 @@
 import PyCore
 import PyDataProcess
 import copy
-import matplotlib.pyplot as plt
 from skimage.filters import *
 import cv2
 import numpy as np

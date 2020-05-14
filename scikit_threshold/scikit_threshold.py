@@ -1,5 +1,3 @@
-import sys
-import numpy
 import PyCore
 import PyDataProcess
 import scikit_threshold_process as processMod
