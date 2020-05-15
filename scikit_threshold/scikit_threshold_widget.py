@@ -104,18 +104,35 @@ class scikit_thresholdWidget(PyCore.CProtocolTaskWidget):
         self.spin_block_size.setValue(35)
         self.spin_block_size.setSingleStep(2)
         self.spin_block_size.setMaximum(self.MAX_SPINBOX)
+        # update left parameter panel
+        if self.parameters.local_block_size != 35:
+            self.spin_block_size.setValue(self.parameters.local_block_size)
 
         label_mth = QLabel("method :")
         self.stack_comboMethod_mth = QComboBox()
         self.stack_comboMethod_mth.addItem("gaussian")
         self.stack_comboMethod_mth.addItem("mean")
         self.stack_comboMethod_mth.addItem("median")
+        # update left parameter panel
+        if self.parameters.local_mth == "mean":
+            self.stack_comboMethod_mth.clear()
+            self.stack_comboMethod_mth.addItem("mean")
+            self.stack_comboMethod_mth.addItem("gaussian")
+            self.stack_comboMethod_mth.addItem("median")
+        if self.parameters.local_mth == "median":
+            self.stack_comboMethod_mth.clear()
+            self.stack_comboMethod_mth.addItem("median")
+            self.stack_comboMethod_mth.addItem("gaussian")
+            self.stack_comboMethod_mth.addItem("mean")
         self.stack_comboMethod_mth.currentIndexChanged.connect(self.onSelectionMethod)
-        
+
         label_offset = QLabel("offset :")
         self.spin_offset = QSpinBox()
         self.spin_offset.setValue(0)
         self.spin_offset.setMaximum(self.MAX_SPINBOX)
+        # update left parameter panel
+        if self.parameters.local_offset != 0:
+            self.spin_offset.setValue(self.parameters.local_offset)
 
         label_mode = QLabel("mode :")
         self.stack_comboMethod_mode = QComboBox()
@@ -124,17 +141,59 @@ class scikit_thresholdWidget(PyCore.CProtocolTaskWidget):
         self.stack_comboMethod_mode.addItem("nearest")
         self.stack_comboMethod_mode.addItem("mirror")
         self.stack_comboMethod_mode.addItem("wrap")
+        # update left parameter panel
+        if self.parameters.local_mode == "constant":
+            self.stack_comboMethod_mode.clear()
+            self.stack_comboMethod_mode.addItem("constant")
+            self.stack_comboMethod_mode.addItem("reflect")
+            self.stack_comboMethod_mode.addItem("nearest")
+            self.stack_comboMethod_mode.addItem("mirror")
+            self.stack_comboMethod_mode.addItem("wrap")
+        elif self.parameters.local_mode == "nearest":
+            self.stack_comboMethod_mode.clear()
+            self.stack_comboMethod_mode.addItem("nearest")
+            self.stack_comboMethod_mode.addItem("reflect")
+            self.stack_comboMethod_mode.addItem("constant")
+            self.stack_comboMethod_mode.addItem("mirror")
+            self.stack_comboMethod_mode.addItem("wrap")
+        elif self.parameters.local_mode == "mirror":
+            self.stack_comboMethod_mode.clear()
+            self.stack_comboMethod_mode.addItem("mirror")
+            self.stack_comboMethod_mode.addItem("reflect")
+            self.stack_comboMethod_mode.addItem("constant")
+            self.stack_comboMethod_mode.addItem("nearest")
+            self.stack_comboMethod_mode.addItem("wrap")
+        elif self.parameters.local_mode == "wrap":
+            self.stack_comboMethod_mode.clear()
+            self.stack_comboMethod_mode.addItem("wrap")
+            self.stack_comboMethod_mode.addItem("reflect")
+            self.stack_comboMethod_mode.addItem("constant")
+            self.stack_comboMethod_mode.addItem("nearest")
+            self.stack_comboMethod_mode.addItem("mirror")
         self.stack_comboMethod_mode.currentIndexChanged.connect(self.onSelectionMode)
-        
+
         self.label_cval = QLabel("c_val :")
         self.spin_cval = QDoubleSpinBox()
         self.spin_cval.setValue(0)
         self.spin_cval.setMaximum(self.MAX_SPINBOX)
         self.spin_cval.setSingleStep(0.1)
+ 		# update left parameter panel
+        if self.parameters.local_mode == "constant":
+            self.spin_cval.setValue(self.parameters.local_cval)
+        else :
+            self.label_cval.hide()
+            self.spin_cval.hide()
+
         self.label_local_param = QLabel("sigma :")
         self.spin_local_param = QDoubleSpinBox()
         self.spin_local_param.setValue(2.0)
         self.spin_local_param.setMaximum(self.MAX_SPINBOX)
+        # update left parameter panel
+        if self.parameters.local_mth == "gaussian" and self.parameters.local_param != None:
+            self.spin_local_param.setValue(self.parameters.local_param)
+        if self.parameters.local_mth != "gaussian": 
+            self.label_local_param.hide()
+            self.spin_local_param.hide()
 
         gridLayout.setRowStretch(0,0)
         gridLayout.addWidget(label_block_size, 0, 0)
@@ -163,8 +222,6 @@ class scikit_thresholdWidget(PyCore.CProtocolTaskWidget):
         gridLayout.setRowStretch(6,12)
         self.stack_local.setLayout(gridLayout)
         
-        self.label_cval.hide()
-        self.spin_cval.hide()
 
     def stack_niblackWidget(self):
         gridLayout = QGridLayout()
@@ -174,12 +231,16 @@ class scikit_thresholdWidget(PyCore.CProtocolTaskWidget):
         self.spin_window_sizenb.setSingleStep(2)
         self.spin_window_sizenb.setMinimum(1)
         self.spin_window_sizenb.setMaximum(self.MAX_SPINBOX)
+        if self.parameters.niblackSauvola_window_size != 15:
+            self.spin_window_sizenb.setValue(self.parameters.niblackSauvola_window_size)
 
         label_k = QLabel("k :")
         self.spin_knb = QDoubleSpinBox()
         self.spin_knb.setSingleStep(0.05)
         self.spin_knb.setValue(0.2)
         self.spin_knb.setMaximum(self.MAX_SPINBOX)
+        if self.parameters.niblackSauvola_k != 0.2:
+            self.spin_knb.setValue(self.parameters.niblackSauvola_k)
 
         gridLayout.setRowStretch(0,0)
         gridLayout.addWidget(label_window_size, 0, 0)
@@ -200,21 +261,32 @@ class scikit_thresholdWidget(PyCore.CProtocolTaskWidget):
         self.spin_window_size.setMaximum(self.MAX_SPINBOX)
         self.spin_window_size.setSingleStep(2)
         self.spin_window_size.setMinimum(1)
+        if self.parameters.niblackSauvola_window_size != 15:
+            self.spin_window_size.setValue(self.parameters.niblackSauvola_window_size)
 
         label_k = QLabel("k :")
         self.spin_k = QDoubleSpinBox()
         self.spin_k.setMaximum(self.MAX_SPINBOX)
         self.spin_k.setSingleStep(0.05)
         self.spin_k.setValue(0.2)
+        if self.parameters.niblackSauvola_k != 0.2:
+            self.spin_k.setValue(self.parameters.niblackSauvola_k)
 
         self.sauvola_check = QCheckBox("Default r");
         self.sauvola_check.setChecked(True);
-        self.sauvola_check.stateChanged.connect(self.OnSauvolaDefaultChange)
 
         self.spin_r = QDoubleSpinBox()
         self.spin_r.setSingleStep(10)
         self.spin_r.setMaximum(self.MAX_SPINBOX)
         self.spin_r.setValue(0)
+        
+        if self.parameters.sauvola_r != None:
+            self.sauvola_check.setChecked(False)
+            self.spin_r.setValue(self.parameters.sauvola_r)
+        else : 
+            self.spin_r.hide()
+
+        self.sauvola_check.stateChanged.connect(self.OnSauvolaDefaultChange)
 
         gridLayout.setRowStretch(0,0)
         gridLayout.addWidget(label_window_size, 0, 0)
@@ -231,14 +303,14 @@ class scikit_thresholdWidget(PyCore.CProtocolTaskWidget):
         gridLayout.setRowStretch(3,6)
         self.stack_sauvola.setLayout(gridLayout)
 
-        self.spin_r.hide()
-
     def stack_triangleWidget(self):
         gridLayout = QGridLayout()
         label_nbins = QLabel("nbins :")
         self.spin_nbins = QSpinBox()
         self.spin_nbins.setMaximum(self.MAX_SPINBOX)
         self.spin_nbins.setValue(256)
+        if self.parameters.triangle_nbins != 256:
+            self.spin_nbins.setValue(self.parameters.triangle_nbins)
 
         gridLayout.setRowStretch(0,0)
         gridLayout.addWidget(label_nbins, 0, 0)
@@ -253,6 +325,8 @@ class scikit_thresholdWidget(PyCore.CProtocolTaskWidget):
         self.spin_nbinsOtsu = QSpinBox()
         self.spin_nbinsOtsu.setMaximum(self.MAX_SPINBOX)
         self.spin_nbinsOtsu.setValue(256)
+        if self.parameters.otsu_nbins != 256:
+            self.spin_nbinsOtsu.setValue(self.parameters.otsu_nbins)
 
         gridLayout.setRowStretch(0,0)
         gridLayout.addWidget(label_nbins, 0, 0)
@@ -268,6 +342,8 @@ class scikit_thresholdWidget(PyCore.CProtocolTaskWidget):
         self.spin_nbinsIso = QSpinBox()
         self.spin_nbinsIso.setMaximum(self.MAX_SPINBOX)
         self.spin_nbinsIso.setValue(256)
+        if self.parameters.isodata_nbins != 256:
+            self.spin_nbinsIso.setValue(self.parameters.isodata_nbins)
 
         gridLayout.setRowStretch(0,0)
         gridLayout.addWidget(label_nbins, 0, 0)
@@ -282,6 +358,9 @@ class scikit_thresholdWidget(PyCore.CProtocolTaskWidget):
         self.spin_nbinsYen = QSpinBox()
         self.spin_nbinsYen.setMaximum(self.MAX_SPINBOX)
         self.spin_nbinsYen.setValue(256)
+        if self.parameters.yen_nbins != 256:
+            self.spin_nbinsYen.setValue(self.parameters.yen_nbins)
+
         gridLayout.setRowStretch(0,0)
         gridLayout.addWidget(label_nbins, 0, 0)
         gridLayout.setRowStretch(0,1)
@@ -298,16 +377,25 @@ class scikit_thresholdWidget(PyCore.CProtocolTaskWidget):
         self.spin_tolerance = QDoubleSpinBox()
         self.spin_tolerance.setValue(0.1)
         self.spin_tolerance.setMinimum(0.1)
-        self.spin_tolerance.setSingleStep(0.1)
+        self.spin_tolerance.setSingleStep(0.01)
         self.spin_tolerance.setMaximum(65535)
         self.label_initialguess = QLabel("initial_guess :")
         self.spin_initialguess = QDoubleSpinBox()
         self.spin_initialguess.setValue(0.1)
         self.spin_initialguess.setMinimum(0.1)
-        self.spin_initialguess.setSingleStep(0.1)
+        self.spin_initialguess.setSingleStep(0.01)
         self.spin_initialguess.setMaximum(65535)
         self.li_check.stateChanged.connect(self.OnLiDefaultChange)
 
+        if self.parameters.li_tolerance != None or self.parameters.li_initialguess != None:
+            self.li_check.setChecked(False)
+            self.spin_tolerance.setValue(self.parameters.li_tolerance)
+            self.spin_initialguess.setValue(self.parameters.li_initialguess)
+        else : 
+            self.label_tolerence.hide()
+            self.spin_tolerance.hide()
+            self.label_initialguess.hide()
+            self.spin_initialguess.hide()
 
         gridLayout.setRowStretch(0,0)
         gridLayout.addWidget(label_default, 0, 0)
@@ -323,10 +411,6 @@ class scikit_thresholdWidget(PyCore.CProtocolTaskWidget):
         gridLayout.addWidget(self.spin_initialguess, 2, 1)
         gridLayout.setRowStretch(3,6)
         
-        self.label_tolerence.hide()
-        self.spin_tolerance.hide()
-        self.label_initialguess.hide()
-        self.spin_initialguess.hide()
         self.stack_li.setLayout(gridLayout)
 
     def stack_multiotsuWidget(self):
@@ -336,11 +420,15 @@ class scikit_thresholdWidget(PyCore.CProtocolTaskWidget):
         self.spin_classes.setMinimum(2)
         self.spin_classes.setValue(3)
         self.spin_classes.setMaximum(self.MAX_SPINBOX)
+        if self.parameters.multiotsu_classes != 3:
+            self.spin_classes.setValue(self.parameters.multiotsu_classes)
 
         label_mo_nbins = QLabel("nbins :")
         self.spin_mo_nbins = QSpinBox()
         self.spin_mo_nbins.setMaximum(self.MAX_SPINBOX)
         self.spin_mo_nbins.setValue(256)
+        if self.parameters.multiotsu_nbins != 3:
+            self.spin_mo_nbins.setValue(self.parameters.multiotsu_nbins)
 
         gridLayout.setRowStretch(0,0)
         gridLayout.addWidget(label_classes, 0, 0)
@@ -360,12 +448,16 @@ class scikit_thresholdWidget(PyCore.CProtocolTaskWidget):
         self.spin_low.setSingleStep(0.05)
         self.spin_low.setMaximum(self.MAX_SPINBOX)
         self.spin_low.setValue(0.1)
+        if self.parameters.hysteresis_low != 0.1:
+            self.spin_low.setValue(self.parameters.hysteresis_low)
 
         label_hight = QLabel("hight :")
         self.spin_hight = QDoubleSpinBox()
         self.spin_hight.setSingleStep(0.05)
         self.spin_hight.setMaximum(self.MAX_SPINBOX)
         self.spin_hight.setValue(0.35)
+        if self.parameters.hysteresis_hight != 0.35:
+            self.spin_hight.setValue(self.parameters.hysteresis_hight)
 
         gridLayout.setRowStretch(0,0)
         gridLayout.addWidget(label_low, 0, 0)
@@ -384,6 +476,8 @@ class scikit_thresholdWidget(PyCore.CProtocolTaskWidget):
         self.spin_nbinsmin = QSpinBox()
         self.spin_nbinsmin.setMaximum(self.MAX_SPINBOX)
         self.spin_nbinsmin.setValue(256)
+        if self.parameters.minimum_nbins != 256:
+            self.spin_nbinsmin.setValue(self.parameters.minimum_nbins)
 
         label_maxiter = QLabel("max_iter:")
         self.spin_maxiter = QSpinBox()
@@ -391,6 +485,8 @@ class scikit_thresholdWidget(PyCore.CProtocolTaskWidget):
         self.spin_maxiter.setMaximum(self.MAX_SPINBOX)
         self.spin_maxiter.setValue(10000)
         self.spin_maxiter.setSingleStep(10)
+        if self.parameters.minimum_maxiter != 10000:
+            self.spin_maxiter.setValue(self.parameters.minimum_maxiter)
 
         gridLayout.setRowStretch(0,0)
         gridLayout.addWidget(label_nbins, 0, 0)
