@@ -107,6 +107,8 @@ class Detectron2_MaskRCNN_CityScapeProcess(PyDataProcess.CImageProcess2d):
             if param.cuda == False:
                 self.cfg.MODEL.DEVICE = "cpu"
                 self.deviceFrom = "cpu"
+            else:
+                self.deviceFrom = "gpu"
             self.predictor = DefaultPredictor(self.cfg)
             self.loaded = True
         # reload model if CUDA check and load without CUDA 
