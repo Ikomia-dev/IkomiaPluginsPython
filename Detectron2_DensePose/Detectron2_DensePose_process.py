@@ -58,7 +58,7 @@ class Detectron2_DensePoseProcess(PyDataProcess.CImageProcess2d):
         self.loaded = False
         self.deviceFrom = ""
         
-        # add output
+        # add output graph
         self.addOutput(PyCore.CGraphicsOutput())
 
     def getProgressSteps(self, eltCount=1):
@@ -67,6 +67,7 @@ class Detectron2_DensePoseProcess(PyDataProcess.CImageProcess2d):
     def run(self):
         global output_graph
         self.beginTaskRun()
+
         # Get input :
         input = self.getInput(0)
 
@@ -115,6 +116,7 @@ class Detectron2_DensePoseProcess(PyDataProcess.CImageProcess2d):
         denseposes = outputs.get("pred_densepose").to_result(boxes_XYWH)
         scores = outputs.get("scores").cpu()
 
+        # Number of iso values betwen 0 and 1
         self.levels = np.linspace(0, 1, 9)
         cmap = cv2.COLORMAP_PARULA
         img_colors_bgr = cv2.applyColorMap((self.levels * 255).astype(np.uint8), cmap)
@@ -122,6 +124,7 @@ class Detectron2_DensePoseProcess(PyDataProcess.CImageProcess2d):
             [int(v) for v in img_color_bgr.ravel()] for img_color_bgr in img_colors_bgr
         ]
 
+        # text and rect graph properties
         properties_text = PyCore.GraphicsTextProperty()
         properties_text.color = [255,255,255]
         properties_text.font_size = 10
@@ -134,7 +137,7 @@ class Detectron2_DensePoseProcess(PyDataProcess.CImageProcess2d):
             result_encoded = denseposes.results[i]
             score = str(scores[i].item())[:5]
             iuv_arr = DensePoseResult.decode_png_data(*result_encoded)
-            # densepose
+            # densepose contours 
             self.visualize_iuv_arr(srcImage, iuv_arr, bbox_xyxy)
             # label + boxe
             if (float(score) > 0.7):
@@ -146,7 +149,7 @@ class Detectron2_DensePoseProcess(PyDataProcess.CImageProcess2d):
         self.endTaskRun()
 
 
-    # visualize densepose with iuv array
+    # visualize densepose contours with iuv array
     def visualize_iuv_arr(self, im, iuv_arr, bbox_xyxy):
         image = im
         patch_ids = iuv_arr[0,:,:]
@@ -185,7 +188,7 @@ class Detectron2_DensePoseProcess(PyDataProcess.CImageProcess2d):
                     it.iternext()
 
 
-    # draw all necessary lines for one surface indice - calling maching square       
+    # draw all lines of maching squares results
     def draw_line(self, image, patch_id, arr, v, color_bgr, bin_code, multi_idx, bbox_xyxy, Nw, Nh, offset):
         lines = self.bin_code_2_lines(arr, v, bin_code, multi_idx, Nw, Nh, offset)
         x0, y0, x1, y1 = bbox_xyxy
@@ -287,13 +290,19 @@ class Detectron2_DensePoseProcessFactory(PyDataProcess.CProcessFactory):
         PyDataProcess.CProcessFactory.__init__(self)
         # Set process information as string here
         self.info.name = "Detectron2_DensePose"
-        self.info.description = "your description"
-        self.info.authors = "Plugin authors"
-        # relative path -> as displayed in Ikomia application process tree
-        self.info.path = "Plugins/Python"
-        # self.info.iconPath = "your path to a specific icon"
-        # self.info.keywords = "your keywords" -> for search
-
+        self.info.shortDescription = "Use of Detectron2 Faster R-CNN model."
+        self.info.description = "Use of Detectron2 DensePose R-CNN model: Human Detection"
+        self.info.authors = "Ikomia team"
+        self.info.path = "Plugins/Python/Detectron2/Detectron2_DensePose"
+        self.info.article = ""
+        self.info.journal = ""
+        self.info.year = 2020
+        self.info.license = "MIT License"
+        self.info.version = "1.0.0"
+        self.info.repo = "https://github.com/Ikomia-dev/IkomiaPluginsPython"
+        self.info.documentationLink = "https://detectron2.readthedocs.io/index.html"
+        self.info.iconPath = ""
+        self.info.keywords = "human detection,rcnn,densepose,detectron2"
 
     def create(self, param=None):
         # Create process object
