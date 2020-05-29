@@ -4,16 +4,16 @@ import copy
 
 # Your imports below
 import numpy as np
-from densepose.data.structures import DensePoseResult
-from densepose.data.structures import DensePoseDataRelative
 import cv2
 import detectron2
 from detectron2.engine import DefaultPredictor
 from detectron2.config import get_cfg
 from detectron2.data import MetadataCatalog
 from detectron2.structures.boxes import BoxMode
-from densepose import add_densepose_config
 import os
+from DensePose_git.densepose.data.structures import DensePoseResult
+from DensePose_git.densepose.config import add_densepose_config
+from DensePose_git.densepose.data.structures import DensePoseDataRelative
 
 # --------------------
 # - Class to handle the process parameters
@@ -23,14 +23,15 @@ class Detectron2_DensePoseParam(PyCore.CProtocolTaskParam):
 
     def __init__(self):
         PyCore.CProtocolTaskParam.__init__(self)
-
+        self.cuda = True
+        
     def setParamMap(self, paramMap):
-        pass
+        self.cuda = int(paramMap["cuda"])
 
     def getParamMap(self):
         paramMap = PyCore.ParamMap()
+        paramMap["cuda"] = str(self.cuda)
         return paramMap
-
 
 # --------------------
 # - Class which implements the process
@@ -48,12 +49,12 @@ class Detectron2_DensePoseProcess(PyDataProcess.CImageProcess2d):
             self.setParam(copy.deepcopy(param))
         
         # get and set config model
-        models_folder = os.path.dirname(os.path.realpath(__file__)) + "/models"
-        MODEL_MODEL = "/densepose_rcnn_R_101_FPN_s1x"
+        self.models_folder = os.path.dirname(os.path.realpath(__file__)) + "/models"
+        self.MODEL_MODEL = "/densepose_rcnn_R_101_FPN_s1x"
         self.cfg = get_cfg()
         add_densepose_config(self.cfg)
-        self.cfg.merge_from_file(models_folder + MODEL_MODEL + ".yaml") # load densepose_rcnn_R_101_FPN_d config from file(.yaml)
-        self.cfg.MODEL.WEIGHTS = models_folder + MODEL_MODEL + ".pkl"   # load densepose_rcnn_R_101_FPN_d config from file(.pkl)
+        self.cfg.merge_from_file(self.models_folder + self.MODEL_MODEL + ".yaml") # load densepose_rcnn_R_101_FPN_d config from file(.yaml)
+        self.cfg.MODEL.WEIGHTS = self.models_folder + self.MODEL_MODEL + ".pkl"   # load densepose_rcnn_R_101_FPN_d config from file(.pkl)
         self.loaded = False
         self.deviceFrom = ""
         
@@ -66,7 +67,6 @@ class Detectron2_DensePoseProcess(PyDataProcess.CImageProcess2d):
     def run(self):
         global output_graph
         self.beginTaskRun()
-
         # Get input :
         input = self.getInput(0)
 
@@ -76,9 +76,39 @@ class Detectron2_DensePoseProcess(PyDataProcess.CImageProcess2d):
         output_graph.setNewLayer("DensePose")
         srcImage = input.getImage()
 
-        self.cfg.MODEL.DEVICE = "cpu"
-        self.deviceFrom = "cpu"   
-        self.predictor = DefaultPredictor(self.cfg)
+        # Get parameters :
+        param = self.getParam()
+
+        # predictor
+        if not self.loaded:
+            print("Chargement du modèle")
+            if param.cuda == False:
+                self.cfg.MODEL.DEVICE = "cpu"
+                self.deviceFrom = "cpu"
+            else:
+                self.deviceFrom = "gpu"
+            self.predictor = DefaultPredictor(self.cfg)
+            self.loaded = True
+        # reload model if CUDA check and load without CUDA 
+        elif self.deviceFrom == "cpu" and param.cuda == True:
+            print("Chargement du modèle")
+            self.cfg = get_cfg()
+            add_densepose_config(self.cfg)
+            self.cfg.merge_from_file(self.models_folder + self.MODEL_MODEL + ".yaml")
+            self.cfg.MODEL.WEIGHTS = self.models_folder + self.MODEL_MODEL + ".pkl"
+            self.predictor = DefaultPredictor(self.cfg)
+            self.deviceFrom = "gpu"
+        # reload model if CUDA not check and load with CUDA
+        elif self.deviceFrom == "gpu" and param.cuda == False:
+            print("Chargement du modèle")
+            self.cfg = get_cfg()
+            self.cfg.MODEL.DEVICE = "cpu"
+            add_densepose_config(self.cfg)
+            self.cfg.merge_from_file(self.models_folder + self.MODEL_MODEL + ".yaml")
+            self.cfg.MODEL.WEIGHTS = self.models_folder + self.MODEL_MODEL + ".pkl"  
+            self.predictor = DefaultPredictor(self.cfg)
+            self.deviceFrom = "cpu"
+        
         outputs = self.predictor(srcImage)["instances"]
         boxes_XYXY = outputs.get("pred_boxes").tensor.cpu()
         boxes_XYWH = BoxMode.convert(boxes_XYXY, BoxMode.XYXY_ABS, BoxMode.XYWH_ABS)
@@ -151,12 +181,12 @@ class Detectron2_DensePoseProcess(PyDataProcess.CImageProcess2d):
                 color_bgr = self.level_colors_bgr[level_id]
                 while not it.finished:
                     if (it[0] != 0) and (it[0] != 15):
-                        self.draw_line(image, patch_ids, arr, level, color_bgr, it[0], it.multi_index, bbox_xyxy, Nw, Nh, (i0, j0))
+                        self.draw_line(image, patch_id, arr, level, color_bgr, it[0], it.multi_index, bbox_xyxy, Nw, Nh, (i0, j0))
                     it.iternext()
 
 
     # draw all necessary lines for one surface indice - calling maching square       
-    def draw_line(self, image, patch_ids, arr, v, color_bgr, bin_code, multi_idx, bbox_xyxy, Nw, Nh, offset):
+    def draw_line(self, image, patch_id, arr, v, color_bgr, bin_code, multi_idx, bbox_xyxy, Nw, Nh, offset):
         lines = self.bin_code_2_lines(arr, v, bin_code, multi_idx, Nw, Nh, offset)
         x0, y0, x1, y1 = bbox_xyxy
         w = x1-x0
@@ -169,8 +199,6 @@ class Detectron2_DensePoseProcess(PyDataProcess.CImageProcess2d):
             pt0 = (int(x0 + x0r * (x1 - x0)), int(y0 + y0r * (y1 - y0)))
             pt1 = (int(x0 + x1r * (x1 - x0)), int(y0 + y1r * (y1 - y0)))
             properties_line = PyCore.GraphicsPolylineProperty()
-            i, j = multi_idx
-            patch_id = patch_ids[i,j]
             properties_line.pen_color = color_bgr
             properties_line.line_size = 1
             properties_line.category = str(patch_id)
