@@ -1,3 +1,4 @@
+import update_path
 import PyCore
 import PyDataProcess
 import copy
