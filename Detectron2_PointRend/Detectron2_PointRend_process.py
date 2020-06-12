@@ -51,7 +51,7 @@ class Detectron2_PointRendProcess(PyDataProcess.CImageProcess2d):
 
         self.threshold = 0.5
         self.path_to_config = "/PointRend_git/configs/InstanceSegmentation/pointrend_rcnn_R_50_FPN_3x_coco.yaml"
-        self.path_to_model = "/models/pointrend_rcnn_R50_FPN_3x.pkl"
+        self.path_to_model = "/models/model_final_3c3198.pkl"
         self.folder = os.path.dirname(os.path.realpath(__file__))
         self.cfg = get_cfg()
         add_pointrend_config(self.cfg)

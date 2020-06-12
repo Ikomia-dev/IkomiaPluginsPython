@@ -55,7 +55,7 @@ class Detectron2_DensePoseProcess(PyDataProcess.CImageProcess2d):
         self.cfg = get_cfg()
         add_densepose_config(self.cfg)
         self.cfg.merge_from_file(self.folder + "/DensePose_git/configs"+self.MODEL_NAME+".yaml") # load densepose_rcnn_R_101_FPN_d config from file(.yaml)
-        self.cfg.MODEL.WEIGHTS = self.folder + "/models" + self.MODEL_NAME + ".pkl"   # load densepose_rcnn_R_101_FPN_d config from file(.pkl)
+        self.cfg.MODEL.WEIGHTS = self.folder + "/models/model_final_c6ab63.pkl"   # load densepose_rcnn_R_101_FPN_d config from file(.pkl)
         self.loaded = False
         self.deviceFrom = ""
         
