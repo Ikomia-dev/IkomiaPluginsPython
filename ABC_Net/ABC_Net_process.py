@@ -109,7 +109,11 @@ class ABC_NetProcess(PyDataProcess.CImageProcess2d):
         self.emitStepProgress()
 
         # results 
-        beziers = predictions.beziers.numpy()
+        if param.cuda :
+            beziers = predictions.beziers.cpu().numpy()
+        else:
+            beziers = predictions.beziers.numpy()
+
         scores = predictions.scores.tolist()
         recs = predictions.recs
         properties_text = PyCore.GraphicsTextProperty()
