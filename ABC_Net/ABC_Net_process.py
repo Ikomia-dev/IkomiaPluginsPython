@@ -155,7 +155,7 @@ class ABC_NetProcessFactory(PyDataProcess.CProcessFactory):
         self.info.shortDescription = "ABC_Net from AdelaiDet project, Accurate text detector using neural network"
         self.info.description = "ABC_Net from AdelaiDet project, Accurate text detector using neural network based on Detectron2"
         self.info.authors = "Ikomia team"
-        self.info.path = "Plugins/Python/Detectron2/ABC_Net"
+        self.info.path = "Plugins/Python/Detectron2"
         self.info.article = ""
         self.info.journal = ""
         self.info.year = 2020
@@ -163,7 +163,7 @@ class ABC_NetProcessFactory(PyDataProcess.CProcessFactory):
         self.info.version = "1.0.0"
         self.info.repo = "https://github.com/Ikomia-dev/IkomiaPluginsPython"
         self.info.documentationLink = "https://detectron2.readthedocs.io/index.html"
-        self.info.iconPath = ""
+        self.info.iconPath = "icons/detectron2.png"
         self.info.keywords = "Text detector,Detectron2,AdelaiDet,ABC_Net"
 
 

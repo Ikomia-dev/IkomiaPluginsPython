@@ -210,7 +210,7 @@ class Detectron2_PointRendProcessFactory(PyDataProcess.CProcessFactory):
         self.info.shortDescription = "Use of Detectron2 PointRend model."
         self.info.description = "Use of Detectron2 PointRend model : Segmentation mask, more precise than mask R-CNN"
         self.info.authors = "Ikomia team"
-        self.info.path = "Plugins/Python/Detectron2/Detectron2_PointRend"
+        self.info.path = "Plugins/Python/Detectron2"
         self.info.article = ""
         self.info.journal = ""
         self.info.year = 2020
@@ -218,7 +218,7 @@ class Detectron2_PointRendProcessFactory(PyDataProcess.CProcessFactory):
         self.info.version = "1.0.0"
         self.info.repo = "https://github.com/Ikomia-dev/IkomiaPluginsPython"
         self.info.documentationLink = "https://detectron2.readthedocs.io/index.html"
-        self.info.iconPath = ""
+        self.info.iconPath = "icons/detectron2.png"
         self.info.keywords = "mask,rcnn,PointRend,detectron2,segmentation"
 
     def create(self, param=None):

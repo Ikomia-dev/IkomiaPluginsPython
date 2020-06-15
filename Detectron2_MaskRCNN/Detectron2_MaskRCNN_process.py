@@ -201,7 +201,7 @@ class Detectron2_MaskRCNNProcessFactory(PyDataProcess.CProcessFactory):
         self.info.shortDescription = "Use of Detectron2 Mask R-CNN model."
         self.info.description = "UUse of Detectron2 Mask R-CNN model : Objects detection + segmentation"
         self.info.authors = "Ikomia team"
-        self.info.path = "Plugins/Python/Detectron2/Detectron2_MaskRCNN"
+        self.info.path = "Plugins/Python/Detectron2"
         self.info.article = ""
         self.info.journal = ""
         self.info.year = 2020
@@ -209,7 +209,7 @@ class Detectron2_MaskRCNNProcessFactory(PyDataProcess.CProcessFactory):
         self.info.version = "1.0.0"
         self.info.repo = "https://github.com/Ikomia-dev/IkomiaPluginsPython"
         self.info.documentationLink = "https://detectron2.readthedocs.io/index.html"
-        self.info.iconPath = ""
+        self.info.iconPath = "icons/detectron2.png"
         self.info.keywords = "mask,rcnn,maskRCNN,detectron2,detection,segmentation"
 
     def create(self, param=None):

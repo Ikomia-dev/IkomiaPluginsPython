@@ -169,10 +169,10 @@ class Detectron2_FasterRCNNProcessFactory(PyDataProcess.CProcessFactory):
         PyDataProcess.CProcessFactory.__init__(self)
         # Set process information as string here
         self.info.name = "Detectron2_FasterRCNN"
-        self.info.shortDescription = "Use of Detectron2 Faster R-CNN model."
+        self.info.shortDescription = "Detectron2 Faster R-CNN."
         self.info.description = "Use of Detectron2 Faster R-CNN model : Objects detection"
-        self.info.authors = "Ikomia team"
-        self.info.path = "Plugins/Python/Detectron2/Detectron2_FasterRCNN"
+        self.info.authors = "Facebook Research"
+        self.info.path = "Plugins/Python/Detectron2"
         self.info.article = ""
         self.info.journal = ""
         self.info.year = 2020
@@ -180,7 +180,7 @@ class Detectron2_FasterRCNNProcessFactory(PyDataProcess.CProcessFactory):
         self.info.version = "1.0.0"
         self.info.repo = "https://github.com/Ikomia-dev/IkomiaPluginsPython"
         self.info.documentationLink = "https://detectron2.readthedocs.io/index.html"
-        self.info.iconPath = ""
+        self.info.iconPath = "icons/detectron2.png"
         self.info.keywords = "faster,rcnn,fasterRCNN,detectron2,detection"
 
     def create(self, param=None):

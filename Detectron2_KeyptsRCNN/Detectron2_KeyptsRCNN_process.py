@@ -220,7 +220,7 @@ class Detectron2_KeyptsRCNNProcessFactory(PyDataProcess.CProcessFactory):
         self.info.shortDescription = "Use of Detectron2 Keypoint detection model."
         self.info.description = "Use of Detectron2 Keypoint detection model : Keypoints R-CNN, human detection"
         self.info.authors = "Ikomia team"
-        self.info.path = "Plugins/Python/Detectron2/Detectron2_KeyptsRCNN"
+        self.info.path = "Plugins/Python/Detectron2"
         self.info.article = ""
         self.info.journal = ""
         self.info.year = 2020
@@ -228,7 +228,7 @@ class Detectron2_KeyptsRCNNProcessFactory(PyDataProcess.CProcessFactory):
         self.info.version = "1.0.0"
         self.info.repo = "https://github.com/Ikomia-dev/IkomiaPluginsPython"
         self.info.documentationLink = "https://detectron2.readthedocs.io/index.html"
-        self.info.iconPath = ""
+        self.info.iconPath = "icons/detectron2.png"
         self.info.keywords = "human detection,keypoint,detectron2,human skeleton"
 
     def create(self, param=None):
