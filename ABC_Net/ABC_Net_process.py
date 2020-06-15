@@ -45,11 +45,12 @@ class ABC_NetProcess(PyDataProcess.CImageProcess2d):
             self.setParam(copy.deepcopy(param))
 
         # get and set config model
-        self.MODEL_NAME = "attn_R_50"
+        self.MODEL_NAME_CONFIG = "attn_R_50"
+        self.MODEL_NAME = "tt_e2e_attn_R_50"
         self.cfg = get_cfg()
         self.folder = os.path.dirname(os.path.realpath(__file__)) 
-        self.cfg.merge_from_file(self.folder + "/AdelaiDet_git/configs/BAText/TotalText/"+self.MODEL_NAME+".yaml") # load densepose_rcnn_R_101_FPN_d config from file(.yaml)
-        self.cfg.MODEL.WEIGHTS = self.folder + "/models/attn_R_50.pth"
+        self.cfg.merge_from_file(self.folder + "/AdelaiDet_git/configs/BAText/TotalText/"+self.MODEL_NAME_CONFIG+".yaml") # load densepose_rcnn_R_101_FPN_d config from file(.yaml)
+        self.cfg.MODEL.WEIGHTS = self.folder + "/models/"+self.MODEL_NAME+".pth"
         self.loaded = False
         self.deviceFrom = ""
 
@@ -81,30 +82,27 @@ class ABC_NetProcess(PyDataProcess.CImageProcess2d):
         # predictor
         if not self.loaded:
             print("Chargement du modèle")
-            self.cfg = get_cfg()
             if param.cuda == False:
                 self.cfg.MODEL.DEVICE = "cpu"
                 self.deviceFrom = "cpu"
             else:
                 self.deviceFrom = "gpu"
-            self.cfg.merge_from_file(self.folder + "/AdelaiDet_git/configs/BAText/TotalText/"+self.MODEL_NAME+".yaml") # load densepose_rcnn_R_101_FPN_d config from file(.yaml)
-            self.cfg.MODEL.WEIGHTS = self.folder + "/models/attn_R_50.pth"
             self.loaded = True
         # reload model if CUDA check and load without CUDA 
         elif self.deviceFrom == "cpu" and param.cuda == True:
             print("Chargement du modèle")
             self.deviceFrom = "gpu"
             self.cfg = get_cfg()
-            self.cfg.merge_from_file(self.folder + "/AdelaiDet_git/configs/BAText/TotalText/"+self.MODEL_NAME+".yaml") # load densepose_rcnn_R_101_FPN_d config from file(.yaml)
-            self.cfg.MODEL.WEIGHTS = self.folder + "/models/attn_R_50.pth"
+            self.cfg.merge_from_file(self.folder + "/AdealText/"+self.MODEL_NAME_CONFIG+".yaml") # load densepose_rcnn_R_101_FPN_d config from file(.yaml)
+            self.cfg.MODEL.WEIGHTS = self.folder + "/models/"+self.MODEL_NAME+".pth"
         # reload model if CUDA not check and load with CUDA
         elif self.deviceFrom == "gpu" and param.cuda == False:
             print("Chargement du modèle")
             self.deviceFrom = "cpu"
             self.cfg = get_cfg()
             self.cfg.MODEL.DEVICE = "cpu"
-            self.cfg.merge_from_file(self.folder + "/AdelaiDet_git/configs/BAText/TotalText/"+self.MODEL_NAME+".yaml") # load densepose_rcnn_R_101_FPN_d config from file(.yaml)
-            self.cfg.MODEL.WEIGHTS = self.folder + "/models/attn_R_50.pth"
+            self.cfg.merge_from_file(self.folder + "/AdelaiDet_git/configs/BAText/TotalText/"+self.MODEL_NAME_CONFIG+".yaml") # load densepose_rcnn_R_101_FPN_d config from file(.yaml)
+            self.cfg.MODEL.WEIGHTS = self.folder + "/models/"+self.MODEL_NAME+".pth"
 
         predictor = DefaultPredictor(self.cfg)
         predictions = predictor(srcImage)["instances"]

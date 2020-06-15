@@ -51,11 +51,13 @@ class Detectron2_DensePoseProcess(PyDataProcess.CImageProcess2d):
         
         # get and set config model
         self.folder = os.path.dirname(os.path.realpath(__file__)) 
-        self.MODEL_NAME = "/densepose_rcnn_R_101_FPN_s1x"
+        self.MODEL_NAME_CONFIG = "densepose_rcnn_R_101_FPN_s1x"
+        self.MODEL_NAME = "model_final_c6ab63"
+
         self.cfg = get_cfg()
         add_densepose_config(self.cfg)
-        self.cfg.merge_from_file(self.folder + "/DensePose_git/configs"+self.MODEL_NAME+".yaml") # load densepose_rcnn_R_101_FPN_d config from file(.yaml)
-        self.cfg.MODEL.WEIGHTS = self.folder + "/models/model_final_c6ab63.pkl"   # load densepose_rcnn_R_101_FPN_d config from file(.pkl)
+        self.cfg.merge_from_file(self.folder + "/DensePose_git/configs/"+self.MODEL_NAME_CONFIG+".yaml") # load densepose_rcnn_R_101_FPN_d config from file(.yaml)
+        self.cfg.MODEL.WEIGHTS = self.folder + "/models/"+self.MODEL_NAME+".pkl"   # load densepose_rcnn_R_101_FPN_d config from file(.pkl)
         self.loaded = False
         self.deviceFrom = ""
         
@@ -89,16 +91,14 @@ class Detectron2_DensePoseProcess(PyDataProcess.CImageProcess2d):
                 self.deviceFrom = "cpu"
             else:
                 self.deviceFrom = "gpu"
-            self.predictor = DefaultPredictor(self.cfg)
             self.loaded = True
         # reload model if CUDA check and load without CUDA 
         elif self.deviceFrom == "cpu" and param.cuda == True:
             print("Chargement du modèle")
             self.cfg = get_cfg()
             add_densepose_config(self.cfg)
-            self.cfg.merge_from_file(self.models_folder + self.MODEL_MODEL + ".yaml")
-            self.cfg.MODEL.WEIGHTS = self.models_folder + self.MODEL_MODEL + ".pkl"
-            self.predictor = DefaultPredictor(self.cfg)
+            self.cfg.merge_from_file(self.folder + "/DensePose_git/configs/"+self.MODEL_NAME_CONFIG+".yaml") 
+            self.cfg.MODEL.WEIGHTS = self.folder + "/models/"+self.MODEL_NAME+".pkl"   
             self.deviceFrom = "gpu"
         # reload model if CUDA not check and load with CUDA
         elif self.deviceFrom == "gpu" and param.cuda == False:
@@ -106,11 +106,11 @@ class Detectron2_DensePoseProcess(PyDataProcess.CImageProcess2d):
             self.cfg = get_cfg()
             self.cfg.MODEL.DEVICE = "cpu"
             add_densepose_config(self.cfg)
-            self.cfg.merge_from_file(self.models_folder + self.MODEL_MODEL + ".yaml")
-            self.cfg.MODEL.WEIGHTS = self.models_folder + self.MODEL_MODEL + ".pkl"  
-            self.predictor = DefaultPredictor(self.cfg)
+            self.cfg.merge_from_file(self.folder + "/DensePose_git/configs/"+self.MODEL_NAME_CONFIG+".yaml") 
+            self.cfg.MODEL.WEIGHTS = self.folder + "/models/"+self.MODEL_NAME+".pkl"   
             self.deviceFrom = "cpu"
         
+        self.predictor = DefaultPredictor(self.cfg)
         outputs = self.predictor(srcImage)["instances"]
         boxes_XYXY = outputs.get("pred_boxes").tensor.cpu()
         boxes_XYWH = BoxMode.convert(boxes_XYXY, BoxMode.XYXY_ABS, BoxMode.XYWH_ABS)

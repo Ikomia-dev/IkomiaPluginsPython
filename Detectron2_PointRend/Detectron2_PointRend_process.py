@@ -97,7 +97,6 @@ class Detectron2_PointRendProcess(PyDataProcess.CImageProcess2d):
                 self.deviceFrom = "cpu"
             else:
                 self.deviceFrom = "gpu"
-            self.predictor = DefaultPredictor(self.cfg)
             self.loaded = True
         # reload model if CUDA check and load without CUDA 
         elif self.deviceFrom == "cpu" and param.cuda == True:
@@ -107,7 +106,6 @@ class Detectron2_PointRendProcess(PyDataProcess.CImageProcess2d):
             self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = self.threshold
             self.cfg.merge_from_file(self.folder + self.path_to_config)
             self.cfg.MODEL.WEIGHTS = self.folder + self.path_to_model
-            self.predictor = DefaultPredictor(self.cfg)
             self.deviceFrom = "gpu"
         # reload model if CUDA not check and load with CUDA
         elif self.deviceFrom == "gpu" and param.cuda == False:
@@ -118,9 +116,10 @@ class Detectron2_PointRendProcess(PyDataProcess.CImageProcess2d):
             self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = self.threshold
             self.cfg.merge_from_file(self.folder + self.path_to_config)
             self.cfg.MODEL.WEIGHTS = self.folder + self.path_to_model
-            self.predictor = DefaultPredictor(self.cfg)
             self.deviceFrom = "cpu"
-            
+    
+
+        self.predictor = DefaultPredictor(self.cfg)
         outputs = self.predictor(srcImage)
         
 
