@@ -134,14 +134,14 @@ class Detectron2_DensePoseProcess(PyDataProcess.CImageProcess2d):
         self.emitStepProgress()
 
         for i in range(len(denseposes)):
-            bbox_xyxy = boxes_XYXY[i]
-            result_encoded = denseposes.results[i]
             score = str(scores[i].item())[:5]
-            iuv_arr = DensePoseResult.decode_png_data(*result_encoded)
-            # densepose contours 
-            self.visualize_iuv_arr(srcImage, iuv_arr, bbox_xyxy)
-            # label + boxe
             if (float(score) > 0.7):
+                bbox_xyxy = boxes_XYXY[i]
+                result_encoded = denseposes.results[i]
+                iuv_arr = DensePoseResult.decode_png_data(*result_encoded)
+                # densepose contours 
+                self.visualize_iuv_arr(srcImage, iuv_arr, bbox_xyxy)
+                # box
                 output_graph.addRectangle(bbox_xyxy[0].item(), bbox_xyxy[1].item(), bbox_xyxy[2].item() - bbox_xyxy[0].item(), bbox_xyxy[3].item() -  bbox_xyxy[1].item(),properties_rect)
                 output_graph.addText(str(score), float(bbox_xyxy[0].item()), float(bbox_xyxy[1].item()), properties_text)
         
@@ -161,10 +161,15 @@ class Detectron2_DensePoseProcess(PyDataProcess.CImageProcess2d):
     
     # calcul binary codes necessary to draw lines - value for maching square cases
     def contours(self, image, arr, patch_ids, bbox_xyxy):
+        properties_line = PyCore.GraphicsPolylineProperty()
+        properties_line.line_size = 1
+
         for patch_id in range(1, DensePoseDataRelative.N_PART_LABELS + 1):
             mask = patch_ids == patch_id
             if not np.any(mask):
                 continue
+
+            properties_line.category = str(patch_id)
             arr_min = np.amin(arr[mask])
             arr_max = np.amax(arr[mask])
             I, J = np.nonzero(mask)
@@ -174,42 +179,42 @@ class Detectron2_DensePoseProcess(PyDataProcess.CImageProcess2d):
             j1 = np.amax(J) + 1
             if (j1 == j0 + 1) or (i1 == i0 + 1):
                 continue
+
             Nw = arr.shape[1] - 1
             Nh = arr.shape[0] - 1
+
             for level_id, level in enumerate(self.levels):
                 if (level < arr_min) or (level > arr_max):
                     continue
+
                 vp = arr[i0:i1, j0:j1] >= level
                 bin_codes = vp[:-1, :-1] + vp[1:, :-1] * 2 + vp[1:, 1:] * 4 + vp[:-1, 1:] * 8
+                mp = mask[i0:i1, j0:j1]
+                bin_mask_codes = mp[:-1, :-1] + mp[1:, :-1] * 2 + mp[1:, 1:] * 4 + mp[:-1, 1:] * 8
                 it = np.nditer(bin_codes, flags=["multi_index"])
-                color_bgr = self.level_colors_bgr[level_id]
+                properties_line.pen_color = self.level_colors_bgr[level_id]
+
                 while not it.finished:
                     if (it[0] != 0) and (it[0] != 15):
-                        self.draw_line(image, patch_id, arr, level, color_bgr, it[0], it.multi_index, bbox_xyxy, Nw, Nh, (i0, j0))
+                        i, j = it.multi_index
+                        if bin_mask_codes[i, j] != 0:
+                            self.draw_line(image, arr, level, properties_line, it[0], it.multi_index, bbox_xyxy, Nw, Nh, (i0, j0))
                     it.iternext()
 
 
     # draw all lines of maching squares results
-    def draw_line(self, image, patch_id, arr, v, color_bgr, bin_code, multi_idx, bbox_xyxy, Nw, Nh, offset):
+    def draw_line(self, image, arr, v, properties_line, bin_code, multi_idx, bbox_xyxy, Nw, Nh, offset):
         lines = self.bin_code_2_lines(arr, v, bin_code, multi_idx, Nw, Nh, offset)
         x0, y0, x1, y1 = bbox_xyxy
-        w = x1-x0
-        h = y1-y0
-        x1 = x0 + w
-        y1 = y0 + h
+        w = x1 - x0
+        h = y1 - y0
+
         for line in lines:
             x0r, y0r = line[0]
             x1r, y1r = line[1]
-            pt0 = (int(x0 + x0r * (x1 - x0)), int(y0 + y0r * (y1 - y0)))
-            pt1 = (int(x0 + x1r * (x1 - x0)), int(y0 + y1r * (y1 - y0)))
-            properties_line = PyCore.GraphicsPolylineProperty()
-            properties_line.pen_color = color_bgr
-            properties_line.line_size = 1
-            properties_line.category = str(patch_id)
-            pts0 = PyCore.CPointF(float(pt0[0]), float(pt0[1]))
-            pts1 = PyCore.CPointF(float(pt1[0]), float(pt1[1]))
-            lst_points = [pts0, pts1]
-            output_graph.addPolyline(lst_points, properties_line)
+            pts0 = PyCore.CPointF((float)(x0 + x0r * w), (float)(y0 + y0r * h))
+            pts1 = PyCore.CPointF((float)(x0 + x1r * w), (float)(y0 + y1r * h))
+            output_graph.addPolyline([pts0, pts1], properties_line)
 
     # maching square
     def bin_code_2_lines(self, arr, v, bin_code, multi_idx, Nw, Nh, offset):
