@@ -30,13 +30,13 @@ class Detectron2_DensePoseWidget(PyCore.CProtocolTaskWidget):
         self.cuda_ckeck.setChecked(True)
 
         # proba parameter
-        proba_label = QLabel("Treshold :")
+        proba_label = QLabel("Threshold :")
        
         self.proba_spinbox = QDoubleSpinBox()
-        self.proba_spinbox.setValue(0.5)
+        self.proba_spinbox.setValue(0.8)
         self.proba_spinbox.setSingleStep(0.1)
         self.proba_spinbox.setMaximum(1)
-        if self.parameters.proba != 0.5:
+        if self.parameters.proba != 0.8:
             self.proba_spinbox.setValue(self.parameters.proba)
 
         self.gridLayout.setColumnStretch(0,0)

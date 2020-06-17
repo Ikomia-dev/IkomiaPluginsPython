@@ -26,7 +26,7 @@ class Detectron2_DensePoseParam(PyCore.CProtocolTaskParam):
     def __init__(self):
         PyCore.CProtocolTaskParam.__init__(self)
         self.cuda = True
-        self.proba = 0.5
+        self.proba = 0.8
 
     def setParamMap(self, paramMap):
         self.cuda = int(paramMap["cuda"])
@@ -139,7 +139,7 @@ class Detectron2_DensePoseProcess(PyDataProcess.CImageProcess2d):
         properties_line = PyCore.GraphicsPolylineProperty()
         properties_line.line_size = 1
         self.emitStepProgress()
-
+        
         for i in range(len(denseposes)):
             if scores.numpy()[i] > param.proba:
                 bbox_xywh = boxes_XYWH[i]
@@ -339,7 +339,7 @@ class Detectron2_DensePoseProcessFactory(PyDataProcess.CProcessFactory):
         self.info.version = "1.0.0"
         self.info.repo = "https://github.com/Ikomia-dev/IkomiaPluginsPython"
         self.info.documentationLink = "https://detectron2.readthedocs.io/index.html"
-        self.info.iconPath = ""
+        self.info.iconPath = "icons/detectron2.png"
         self.info.keywords = "human detection,rcnn,densepose,detectron2"
 
     def create(self, param=None):
