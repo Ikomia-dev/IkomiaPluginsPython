@@ -15,6 +15,7 @@ import os
 from DensePose_git.densepose.data.structures import DensePoseResult
 from DensePose_git.densepose.config import add_densepose_config
 from DensePose_git.densepose.data.structures import DensePoseDataRelative
+from matplotlib import pyplot as plt
 
 # --------------------
 # - Class to handle the process parameters
@@ -25,13 +26,16 @@ class Detectron2_DensePoseParam(PyCore.CProtocolTaskParam):
     def __init__(self):
         PyCore.CProtocolTaskParam.__init__(self)
         self.cuda = True
-        
+        self.proba = 0.5
+
     def setParamMap(self, paramMap):
         self.cuda = int(paramMap["cuda"])
+        self.proba = int(paramMap["proba"])
 
     def getParamMap(self):
         paramMap = PyCore.ParamMap()
         paramMap["cuda"] = str(self.cuda)
+        paramMap["proba"] = str(self.proba)
         return paramMap
 
 # --------------------
@@ -51,8 +55,8 @@ class Detectron2_DensePoseProcess(PyDataProcess.CImageProcess2d):
         
         # get and set config model
         self.folder = os.path.dirname(os.path.realpath(__file__)) 
-        self.MODEL_NAME_CONFIG = "densepose_rcnn_R_101_FPN_s1x"
-        self.MODEL_NAME = "model_final_c6ab63"
+        self.MODEL_NAME_CONFIG = "densepose_rcnn_R_50_FPN_s1x"
+        self.MODEL_NAME = "model_final_162be9"
 
         self.cfg = get_cfg()
         add_densepose_config(self.cfg)
@@ -68,9 +72,8 @@ class Detectron2_DensePoseProcess(PyDataProcess.CImageProcess2d):
         return 2
 
     def run(self):
-        global output_graph
         self.beginTaskRun()
-
+        
         # Get input :
         input = self.getInput(0)
 
@@ -92,6 +95,7 @@ class Detectron2_DensePoseProcess(PyDataProcess.CImageProcess2d):
             else:
                 self.deviceFrom = "gpu"
             self.loaded = True
+            self.predictor = DefaultPredictor(self.cfg)
         # reload model if CUDA check and load without CUDA 
         elif self.deviceFrom == "cpu" and param.cuda == True:
             print("Chargement du modèle")
@@ -100,6 +104,7 @@ class Detectron2_DensePoseProcess(PyDataProcess.CImageProcess2d):
             self.cfg.merge_from_file(self.folder + "/DensePose_git/configs/"+self.MODEL_NAME_CONFIG+".yaml") 
             self.cfg.MODEL.WEIGHTS = self.folder + "/models/"+self.MODEL_NAME+".pkl"   
             self.deviceFrom = "gpu"
+            self.predictor = DefaultPredictor(self.cfg)
         # reload model if CUDA not check and load with CUDA
         elif self.deviceFrom == "gpu" and param.cuda == False:
             print("Chargement du modèle")
@@ -109,14 +114,14 @@ class Detectron2_DensePoseProcess(PyDataProcess.CImageProcess2d):
             self.cfg.merge_from_file(self.folder + "/DensePose_git/configs/"+self.MODEL_NAME_CONFIG+".yaml") 
             self.cfg.MODEL.WEIGHTS = self.folder + "/models/"+self.MODEL_NAME+".pkl"   
             self.deviceFrom = "cpu"
-        
-        self.predictor = DefaultPredictor(self.cfg)
+            self.predictor = DefaultPredictor(self.cfg)
+
         outputs = self.predictor(srcImage)["instances"]
+        scores = outputs.get("scores").cpu()
         boxes_XYXY = outputs.get("pred_boxes").tensor.cpu()
         boxes_XYWH = BoxMode.convert(boxes_XYXY, BoxMode.XYXY_ABS, BoxMode.XYWH_ABS)
         denseposes = outputs.get("pred_densepose").to_result(boxes_XYWH)
-        scores = outputs.get("scores").cpu()
-
+        
         # Number of iso values betwen 0 and 1
         self.levels = np.linspace(0, 1, 9)
         cmap = cv2.COLORMAP_PARULA
@@ -131,36 +136,64 @@ class Detectron2_DensePoseProcess(PyDataProcess.CImageProcess2d):
         properties_text.font_size = 10
         properties_rect = PyCore.GraphicsRectProperty()
         properties_rect.pen_color = [11,130,41]
+        properties_line = PyCore.GraphicsPolylineProperty()
+        properties_line.line_size = 1
         self.emitStepProgress()
 
         for i in range(len(denseposes)):
-            score = str(scores[i].item())[:5]
-            if (float(score) > 0.7):
+            if scores.numpy()[i] > param.proba:
+                bbox_xywh = boxes_XYWH[i]
                 bbox_xyxy = boxes_XYXY[i]
                 result_encoded = denseposes.results[i]
                 iuv_arr = DensePoseResult.decode_png_data(*result_encoded)
-                # densepose contours 
-                self.visualize_iuv_arr(srcImage, iuv_arr, bbox_xyxy)
-                # box
+                # without indice surface
+                self.visualize_iuv_arr(srcImage, iuv_arr, bbox_xywh, properties_line, output_graph)
+                # with indice surface
+                #self.visualize_iuv_arr_indiceSurface(srcImage, iuv_arr, bbox_xyxy, output_graph)
                 output_graph.addRectangle(bbox_xyxy[0].item(), bbox_xyxy[1].item(), bbox_xyxy[2].item() - bbox_xyxy[0].item(), bbox_xyxy[3].item() -  bbox_xyxy[1].item(),properties_rect)
-                output_graph.addText(str(score), float(bbox_xyxy[0].item()), float(bbox_xyxy[1].item()), properties_text)
-        
+                output_graph.addText(str(scores[i].item())[:5], float(bbox_xyxy[0].item()), float(bbox_xyxy[1].item()), properties_text)
+       
         output.setImage(srcImage)
         self.emitStepProgress()
         self.endTaskRun()
 
+    # visualize densepose contours
+    def visualize_iuv_arr(self, im, iuv_arr, bbox_xywh, properties_line, output_graph):
+        u = iuv_arr[1,:,:].astype(float) / 255.0
+        v = iuv_arr[2,:,:].astype(float) / 255.0
+        extent = (
+            bbox_xywh[0],
+            bbox_xywh[0] + bbox_xywh[2],
+            bbox_xywh[1],
+            bbox_xywh[1] + bbox_xywh[3],
+        )
+        quadContourSetu = plt.contour(u,self.levels, extent=extent)
+        quadContourSetv = plt.contour(v,self.levels, extent=extent)
 
-    # visualize densepose contours with iuv array
-    def visualize_iuv_arr(self, im, iuv_arr, bbox_xyxy):
+        self.visualize(quadContourSetu.collections, output_graph, properties_line)
+        self.visualize(quadContourSetv.collections, output_graph, properties_line)
+
+    def visualize(self, collections, output_graph, properties_line):
+        for i in range(len(collections)):
+            color = collections[i].get_colors()[0]
+            properties_line.pen_color = [int(color[0]*255),int(color[1]*255),int(color[2]*255)]
+            for lst_pts in collections[i].get_segments():
+                for j in range(len(lst_pts)-1):
+                        pts0 = PyCore.CPointF(float(lst_pts[j][0]),float(lst_pts[j][1]))
+                        pts1 = PyCore.CPointF(float(lst_pts[j+1][0]),float(lst_pts[j+1][1]))
+                        output_graph.addPolyline([pts0, pts1],properties_line)
+
+    # visualize densepose contours with indice surface
+    def visualize_iuv_arr_indiceSurface(self, im, iuv_arr, bbox_xyxy, output_graph):
         image = im
         patch_ids = iuv_arr[0,:,:]
         u = iuv_arr[1,:,:].astype(float) / 255.0
         v = iuv_arr[2,:,:].astype(float) / 255.0
-        self.contours(image, u, patch_ids, bbox_xyxy)
-        self.contours(image, v, patch_ids, bbox_xyxy)
+        self.contours(image, u, patch_ids, bbox_xyxy, output_graph)
+        self.contours(image, v, patch_ids, bbox_xyxy, output_graph)
     
     # calcul binary codes necessary to draw lines - value for maching square cases
-    def contours(self, image, arr, patch_ids, bbox_xyxy):
+    def contours(self, image, arr, patch_ids, bbox_xyxy, output_graph):
         properties_line = PyCore.GraphicsPolylineProperty()
         properties_line.line_size = 1
 
@@ -198,12 +231,12 @@ class Detectron2_DensePoseProcess(PyDataProcess.CImageProcess2d):
                     if (it[0] != 0) and (it[0] != 15):
                         i, j = it.multi_index
                         if bin_mask_codes[i, j] != 0:
-                            self.draw_line(image, arr, level, properties_line, it[0], it.multi_index, bbox_xyxy, Nw, Nh, (i0, j0))
+                            self.draw_line(image, arr, level, properties_line, it[0], it.multi_index, bbox_xyxy, Nw, Nh, (i0, j0), output_graph)
                     it.iternext()
 
 
     # draw all lines of maching squares results
-    def draw_line(self, image, arr, v, properties_line, bin_code, multi_idx, bbox_xyxy, Nw, Nh, offset):
+    def draw_line(self, image, arr, v, properties_line, bin_code, multi_idx, bbox_xyxy, Nw, Nh, offset, output_graph):
         lines = self.bin_code_2_lines(arr, v, bin_code, multi_idx, Nw, Nh, offset)
         x0, y0, x1, y1 = bbox_xyxy
         w = x1 - x0
@@ -285,7 +318,6 @@ class Detectron2_DensePoseProcess(PyDataProcess.CImageProcess2d):
             return [(pt11, pt12), (pt21, pt22)]
         return []
 
-
 # --------------------
 # - Factory class to build process object
 # - Inherits PyDataProcess.CProcessFactory from Ikomia API
@@ -296,10 +328,10 @@ class Detectron2_DensePoseProcessFactory(PyDataProcess.CProcessFactory):
         PyDataProcess.CProcessFactory.__init__(self)
         # Set process information as string here
         self.info.name = "Detectron2_DensePose"
-        self.info.shortDescription = "Use of Detectron2 Faster R-CNN model."
+        self.info.shortDescription = "Use of Detectron2 DensePose model."
         self.info.description = "Use of Detectron2 DensePose R-CNN model: Human Detection"
         self.info.authors = "Ikomia team"
-        self.info.path = "Plugins/Python/Detectron2"
+        self.info.path = "Plugins/Python/Detectron2/Detectron2_DensePose"
         self.info.article = ""
         self.info.journal = ""
         self.info.year = 2020
@@ -307,7 +339,7 @@ class Detectron2_DensePoseProcessFactory(PyDataProcess.CProcessFactory):
         self.info.version = "1.0.0"
         self.info.repo = "https://github.com/Ikomia-dev/IkomiaPluginsPython"
         self.info.documentationLink = "https://detectron2.readthedocs.io/index.html"
-        self.info.iconPath = "icons/detectron2.png"
+        self.info.iconPath = ""
         self.info.keywords = "human detection,rcnn,densepose,detectron2"
 
     def create(self, param=None):
