@@ -1,7 +1,24 @@
 import update_path
+import sys
+from pathlib import Path
 import PyCore
 import PyDataProcess
 import copy
+
+# Update Python path for pywin32 package
+if sys.platform == 'win32':
+    home_path = str(Path.home())
+    pywin_path = (home_path + '\\Ikomia\\Python\\lib\\site-packages\\win32')
+    if pywin_path not in sys.path:
+        sys.path.append(pywin_path)
+
+    pywin_path = (home_path + '\\Ikomia\\Python\\lib\\site-packages\\win32\\lib')
+    if pywin_path not in sys.path:
+        sys.path.append(pywin_path)
+
+    pywin_path = (home_path + '\\Ikomia\\Python\\lib\\site-packages\\Pythonwin')
+    if pywin_path not in sys.path:
+        sys.path.append(pywin_path)
 
 # Your imports below
 import detectron2
@@ -21,13 +38,16 @@ class Detectron2_FasterRCNNParam(PyCore.CProtocolTaskParam):
     def __init__(self):
         PyCore.CProtocolTaskParam.__init__(self)
         self.cuda = True
+        self.proba = 0.8
 
     def setParamMap(self, paramMap):
         self.cuda = int(paramMap["cuda"])
+        self.proba = int(paramMap["proba"])
 
     def getParamMap(self):
         paramMap = PyCore.ParamMap()
         paramMap["cuda"] = str(self.cuda)
+        paramMap["proba"] = str(self.proba)
         return paramMap
 
 
@@ -50,9 +70,9 @@ class Detectron2_FasterRCNNProcess(PyDataProcess.CImageProcess2d):
         self.LINK_MODEL = "COCO-Detection/faster_rcnn_X_101_32x8d_FPN_3x.yaml"
         self.threshold = 0.5
         self.cfg = get_cfg()
-        self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = self.threshold
         self.cfg.merge_from_file(model_zoo.get_config_file(self.LINK_MODEL)) # load config from file(.yaml)
         self.cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(self.LINK_MODEL) # download the model (.pkl)
+        self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = self.threshold
         self.loaded = False
         self.deviceFrom = ""
 
@@ -88,6 +108,8 @@ class Detectron2_FasterRCNNProcess(PyDataProcess.CImageProcess2d):
             if param.cuda == False:
                 self.cfg.MODEL.DEVICE = "cpu"
                 self.deviceFrom = "cpu"
+            else:
+                self.deviceFrom = "gpu"
             self.predictor = DefaultPredictor(self.cfg)
             self.loaded = True
         # reload model if CUDA check and load without CUDA 
@@ -130,27 +152,34 @@ class Detectron2_FasterRCNNProcess(PyDataProcess.CImageProcess2d):
 
         self.emitStepProgress()
 
-        # text label with score
-        labels = None
-        class_names = MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]).get("thing_classes")
-        if classes is not None and class_names is not None and len(class_names) > 1:
-            labels = [class_names[i] for i in classes]
-        if scores is not None:
-            if labels is None:
-                labels = ["{:.0f}%".format(s * 100) for s in scores]
-            else:
-                labels = ["{} {:.0f}%".format(l, s * 100) for l, s in zip(labels, scores)]
+        # keep only the results with proba > threshold
+        scores_np_tresh = list()
+        for s in scores_np:
+            if float(s) > param.proba:
+                scores_np_tresh.append(s)
+                
+        if len(scores_np_tresh) > 0:
+            # text label with score
+            labels = None
+            class_names = MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]).get("thing_classes")
+            if classes is not None and class_names is not None and len(class_names) > 1:
+                labels = [class_names[i] for i in classes]
+            if scores_np_tresh is not None:
+                if labels is None:
+                    labels = ["{:.0f}%".format(s * 100) for s in scores_np_tresh]
+                else:
+                    labels = ["{} {:.0f}%".format(l, s * 100) for l, s in zip(labels, scores_np_tresh)]
 
-        # Show Boxes + labels 
-        for i in range(len(boxes_np)):
-            color = [random.randint(0,255), random.randint(0,255), random.randint(0,255), 255]
-            properties_text = PyCore.GraphicsTextProperty()
-            properties_text.color = color
-            properties_text.font_size = 7
-            properties_rect = PyCore.GraphicsRectProperty()
-            properties_rect.pen_color = color
-            output_graph.addRectangle(float(boxes_np[i][0]), float(boxes_np[i][1]), float(boxes_np[i][2] - boxes_np[i][0]), float(boxes_np[i][3] - boxes_np[i][1]), properties_rect)
-            output_graph.addText(labels[i],float(boxes_np[i][0]), float(boxes_np[i][1]),properties_text)
+            # Show Boxes + labels 
+            for i in range(len(scores_np_tresh)):
+                color = [random.randint(0,255), random.randint(0,255), random.randint(0,255), 255]
+                properties_text = PyCore.GraphicsTextProperty()
+                properties_text.color = color
+                properties_text.font_size = 7
+                properties_rect = PyCore.GraphicsRectProperty()
+                properties_rect.pen_color = color
+                output_graph.addRectangle(float(boxes_np[i][0]), float(boxes_np[i][1]), float(boxes_np[i][2] - boxes_np[i][0]), float(boxes_np[i][3] - boxes_np[i][1]), properties_rect)
+                output_graph.addText(labels[i],float(boxes_np[i][0]), float(boxes_np[i][1]),properties_text)
 
         # Step progress bar:
         self.emitStepProgress()

@@ -1,7 +1,24 @@
 import update_path
+import sys
+from pathlib import Path
 import PyCore
 import PyDataProcess
 import copy
+
+# Update Python path for pywin32 package
+if sys.platform == 'win32':
+    home_path = str(Path.home())
+    pywin_path = (home_path + '\\Ikomia\\Python\\lib\\site-packages\\win32')
+    if pywin_path not in sys.path:
+        sys.path.append(pywin_path)
+
+    pywin_path = (home_path + '\\Ikomia\\Python\\lib\\site-packages\\win32\\lib')
+    if pywin_path not in sys.path:
+        sys.path.append(pywin_path)
+
+    pywin_path = (home_path + '\\Ikomia\\Python\\lib\\site-packages\\Pythonwin')
+    if pywin_path not in sys.path:
+        sys.path.append(pywin_path)
 
 # Your imports below
 import torch
@@ -22,13 +39,16 @@ class Detectron2_MaskRCNNParam(PyCore.CProtocolTaskParam):
     def __init__(self):
         PyCore.CProtocolTaskParam.__init__(self)
         self.cuda = True
+        self.proba = 0.8
 
     def setParamMap(self, paramMap):
         self.cuda = int(paramMap["cuda"])
+        self.proba = int(paramMap["proba"])
 
     def getParamMap(self):
         paramMap = PyCore.ParamMap()
         paramMap["cuda"] = str(self.cuda)
+        paramMap["proba"] = str(self.proba)
         return paramMap
 
 
@@ -70,6 +90,7 @@ class Detectron2_MaskRCNNProcess(PyDataProcess.CImageProcess2d):
 
         # we use seed to keep the same color for our masks + boxes + labels (same random each time)
         random.seed(30)
+        
         # Get input :
         input = self.getInput(0)
         srcImage = input.getImage()
@@ -132,52 +153,61 @@ class Detectron2_MaskRCNNProcess(PyDataProcess.CImageProcess2d):
 
         self.emitStepProgress()
 
-        # create random color for masks + boxes + labels
-        colors = [[0,0,0]]
-        for i in range(len(boxes_np)):
-        	colors.append([random.randint(0,255), random.randint(0,255), random.randint(0,255), 255])
+        # keep only the results with proba > threshold
+        scores_np_tresh = list()
+        for s in scores_np:
+            if float(s) > param.proba:
+                scores_np_tresh.append(s)
 
-        # text labels with scores
-        labels = None
-        class_names = MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]).get("thing_classes")
-        if classes is not None and class_names is not None and len(class_names) > 1:
-            labels = [class_names[i] for i in classes]
-        if scores is not None:
-            if labels is None:
-                labels = ["{:.0f}%".format(s * 100) for s in scores]
-            else:
-                labels = ["{} {:.0f}%".format(l, s * 100) for l, s in zip(labels, scores)]
-
-        # Show boxes + labels
-        for i in range(len(boxes_np)):
-            properties_text = PyCore.GraphicsTextProperty() 
-            properties_text.color = colors[i+1] # start with i+1 we don't use the first color dedicated for the label mask
-            properties_text.font_size = 7
-            properties_rect = PyCore.GraphicsRectProperty()
-            properties_rect.pen_color = colors[i+1]
-            output_graph.addRectangle(float(boxes_np[i][0]), float(boxes_np[i][1]), float(boxes_np[i][2] - boxes_np[i][0]), float(boxes_np[i][3] - boxes_np[i][1]), properties_rect)
-            output_graph.addText(labels[i],float(boxes_np[i][0]), float(boxes_np[i][1]),properties_text)
-        
-        self.emitStepProgress()
-        
-        # label mask
-        nb_objects = len(masks) 
-        if nb_objects > 0:
-            masks = masks[:nb_objects, :, :, None]
-            mask_or = masks[0]*nb_objects
-            for j in range(1, nb_objects):
-                mask_or = torch.max(mask_or, masks[j] * (nb_objects-j))
-            mask_numpy = mask_or.byte().cpu().numpy()
-            mask_output.setImage(mask_numpy)
-
-            # output mask apply to our original image 
-            # inverse colors to match boxes colors
-            c = colors[1:]
-            c = c[::-1]
+        if len(scores_np_tresh) > 0:
+            # create random color for masks + boxes + labels
             colors = [[0,0,0]]
-            for col in c:
-                colors.append(col)
-            self.setOutputColorMap(1, 0, colors)
+            for i in range(len(scores_np_tresh)):
+                colors.append([random.randint(0,255), random.randint(0,255), random.randint(0,255), 255])
+
+            # text labels with scores
+            labels = None
+            class_names = MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]).get("thing_classes")
+            if classes is not None and class_names is not None and len(class_names) > 1:
+                labels = [class_names[i] for i in classes]
+            if scores_np_tresh is not None:
+                if labels is None:
+                    labels = ["{:.0f}%".format(s * 100) for s in scores_np_tresh]
+                else:
+                    labels = ["{} {:.0f}%".format(l, s * 100) for l, s in zip(labels, scores_np_tresh)]
+
+            # Show boxes + labels
+            for i in range(len(scores_np_tresh)):
+                properties_text = PyCore.GraphicsTextProperty() 
+                properties_text.color = colors[i+1] # start with i+1 we don't use the first color dedicated for the label mask
+                properties_text.font_size = 7
+                properties_rect = PyCore.GraphicsRectProperty()
+                properties_rect.pen_color = colors[i+1]
+                output_graph.addRectangle(float(boxes_np[i][0]), float(boxes_np[i][1]), float(boxes_np[i][2] - boxes_np[i][0]), float(boxes_np[i][3] - boxes_np[i][1]), properties_rect)
+                output_graph.addText(labels[i],float(boxes_np[i][0]), float(boxes_np[i][1]),properties_text)
+            
+            self.emitStepProgress()
+            
+            # label mask
+            nb_objects = len(masks[:len(scores_np_tresh)]) 
+            if nb_objects > 0:
+                masks = masks[:nb_objects, :, :, None]
+                mask_or = masks[0]*nb_objects
+                for j in range(1, nb_objects):
+                    mask_or = torch.max(mask_or, masks[j] * (nb_objects-j))
+                mask_numpy = mask_or.byte().cpu().numpy()
+                mask_output.setImage(mask_numpy)
+
+                # output mask apply to our original image 
+                # inverse colors to match boxes colors
+                c = colors[1:]
+                c = c[::-1]
+                colors = [[0,0,0]]
+                for col in c:
+                    colors.append(col)
+                self.setOutputColorMap(1, 0, colors)
+        else:
+            self.emitStepProgress()
         
         self.forwardInputImage(0, 1)
 

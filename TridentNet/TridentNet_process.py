@@ -1,7 +1,24 @@
 import update_path
+import sys
+from pathlib import Path
 import PyCore
 import PyDataProcess
 import copy
+
+# Update Python path for pywin32 package
+if sys.platform == 'win32':
+    home_path = str(Path.home())
+    pywin_path = (home_path + '\\Ikomia\\Python\\lib\\site-packages\\win32')
+    if pywin_path not in sys.path:
+        sys.path.append(pywin_path)
+
+    pywin_path = (home_path + '\\Ikomia\\Python\\lib\\site-packages\\win32\\lib')
+    if pywin_path not in sys.path:
+        sys.path.append(pywin_path)
+
+    pywin_path = (home_path + '\\Ikomia\\Python\\lib\\site-packages\\Pythonwin')
+    if pywin_path not in sys.path:
+        sys.path.append(pywin_path)
 
 # Your imports below
 import os
@@ -22,7 +39,7 @@ class TridentNetParam(PyCore.CProtocolTaskParam):
     def __init__(self):
         PyCore.CProtocolTaskParam.__init__(self)
         self.cuda = True
-        self.proba = 0.5
+        self.proba = 0.8
 
     def setParamMap(self, paramMap):
         self.cuda = int(paramMap["cuda"])
@@ -68,7 +85,10 @@ class TridentNetProcess(PyDataProcess.CImageProcess2d):
 
     def run(self):
         self.beginTaskRun()
- 
+
+        # we use seed to keep the same color for our masks + boxes + labels (same random each time)
+        random.seed(30)
+        
         # Get input :
         input = self.getInput(0)
         srcImage = input.getImage()
@@ -90,6 +110,7 @@ class TridentNetProcess(PyDataProcess.CImageProcess2d):
             else:
                 self.deviceFrom = "gpu"
             self.loaded = True
+            self.predictor = DefaultPredictor(self.cfg)
         # reload model if CUDA check and load without CUDA 
         elif self.deviceFrom == "cpu" and param.cuda == True:
             print("Chargement du modèle")
@@ -98,6 +119,7 @@ class TridentNetProcess(PyDataProcess.CImageProcess2d):
             self.cfg.merge_from_file(self.folder + "/TridentNet_git/configs/"+self.MODEL_NAME_CONFIG+".yaml") 
             self.cfg.MODEL.WEIGHTS = self.folder + "/models/"+self.MODEL_NAME+".pkl"
             self.deviceFrom = "gpu"
+            self.predictor = DefaultPredictor(self.cfg)
         # reload model if CUDA not check and load with CUDA
         elif self.deviceFrom == "gpu" and param.cuda == False:
             print("Chargement du modèle")
@@ -107,9 +129,9 @@ class TridentNetProcess(PyDataProcess.CImageProcess2d):
             self.cfg.merge_from_file(self.folder + "/TridentNet_git/configs/"+self.MODEL_NAME_CONFIG+".yaml") 
             self.cfg.MODEL.WEIGHTS = self.folder + "/models/"+self.MODEL_NAME+".pkl"   
             self.deviceFrom = "cpu"
+            self.predictor = DefaultPredictor(self.cfg)
         
-        predictor = DefaultPredictor(self.cfg)
-        outputs = predictor(srcImage)
+        outputs = self.predictor(srcImage)
 
         # get outputs instances
         output_image.setImage(srcImage)
@@ -129,34 +151,35 @@ class TridentNetProcess(PyDataProcess.CImageProcess2d):
 
         self.emitStepProgress()
         
-        # keep only the most insterresting results
+        # keep only the results with proba > threshold
         scores_np_tresh = list()
         for s in scores_np:
             if float(s) > param.proba:
                 scores_np_tresh.append(s)
         self.emitStepProgress()
 
-         # text label with score
-        labels = None
-        class_names = MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]).get("thing_classes")
-        if classes is not None and class_names is not None and len(class_names) > 1:
-            labels = [class_names[i] for i in classes]
-        if scores_np_tresh is not None:
-            if labels is None:
-                labels = ["{:.0f}%".format(s * 100) for s in scores_np_tresh]
-            else:
-                labels = ["{} {:.0f}%".format(l, s * 100) for l, s in zip(labels, scores_np_tresh)]
+        if len(scores_np_tresh) > 0:
+            # text label with score
+            labels = None
+            class_names = MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]).get("thing_classes")
+            if classes is not None and class_names is not None and len(class_names) > 1:
+                labels = [class_names[i] for i in classes]
+            if scores_np_tresh is not None:
+                if labels is None:
+                    labels = ["{:.0f}%".format(s * 100) for s in scores_np_tresh]
+                else:
+                    labels = ["{} {:.0f}%".format(l, s * 100) for l, s in zip(labels, scores_np_tresh)]
 
-        # Show Boxes + labels 
-        for i in range(len(scores_np_tresh)):
-            color = [random.randint(0,255), random.randint(0,255), random.randint(0,255), 255]
-            properties_text = PyCore.GraphicsTextProperty()
-            properties_text.color = color
-            properties_text.font_size = 7
-            properties_rect = PyCore.GraphicsRectProperty()
-            properties_rect.pen_color = color
-            output_graph.addRectangle(float(boxes_np[i][0]), float(boxes_np[i][1]), float(boxes_np[i][2] - boxes_np[i][0]), float(boxes_np[i][3] - boxes_np[i][1]), properties_rect)
-            output_graph.addText(labels[i],float(boxes_np[i][0]), float(boxes_np[i][1]),properties_text)
+            # Show Boxes + labels 
+            for i in range(len(scores_np_tresh)):
+                color = [random.randint(0,255), random.randint(0,255), random.randint(0,255), 255]
+                properties_text = PyCore.GraphicsTextProperty()
+                properties_text.color = color
+                properties_text.font_size = 7
+                properties_rect = PyCore.GraphicsRectProperty()
+                properties_rect.pen_color = color
+                output_graph.addRectangle(float(boxes_np[i][0]), float(boxes_np[i][1]), float(boxes_np[i][2] - boxes_np[i][0]), float(boxes_np[i][3] - boxes_np[i][1]), properties_rect)
+                output_graph.addText(labels[i],float(boxes_np[i][0]), float(boxes_np[i][1]),properties_text)
 
         # Step progress bar:
         self.emitStepProgress()

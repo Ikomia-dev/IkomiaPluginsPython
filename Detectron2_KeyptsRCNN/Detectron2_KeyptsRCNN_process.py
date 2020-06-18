@@ -1,7 +1,24 @@
 import update_path
+import sys
+from pathlib import Path
 import PyCore
 import PyDataProcess
 import copy
+
+# Update Python path for pywin32 package
+if sys.platform == 'win32':
+    home_path = str(Path.home())
+    pywin_path = (home_path + '\\Ikomia\\Python\\lib\\site-packages\\win32')
+    if pywin_path not in sys.path:
+        sys.path.append(pywin_path)
+
+    pywin_path = (home_path + '\\Ikomia\\Python\\lib\\site-packages\\win32\\lib')
+    if pywin_path not in sys.path:
+        sys.path.append(pywin_path)
+
+    pywin_path = (home_path + '\\Ikomia\\Python\\lib\\site-packages\\Pythonwin')
+    if pywin_path not in sys.path:
+        sys.path.append(pywin_path)
 
 # Your imports below
 import detectron2
@@ -21,13 +38,16 @@ class Detectron2_KeyptsRCNNParam(PyCore.CProtocolTaskParam):
     def __init__(self):
         PyCore.CProtocolTaskParam.__init__(self)
         self.cuda = True
+        self.proba = 0.8
 
     def setParamMap(self, paramMap):
         self.cuda = int(paramMap["cuda"])
+        self.proba = int(paramMap["proba"])
 
     def getParamMap(self):
         paramMap = PyCore.ParamMap()
         paramMap["cuda"] = str(self.cuda)
+        paramMap["proba"] = str(self.proba)
         return paramMap
 
 
@@ -135,69 +155,78 @@ class Detectron2_KeyptsRCNNProcess(PyDataProcess.CImageProcess2d):
         
         self.emitStepProgress()
 
-        # create random color for boxes and labels
-        colors = []
-        for i in range(len(boxes_np)):
-        	colors.append([random.randint(0,255), random.randint(0,255), random.randint(0,255), 255])
+        # keep only the results with proba > threshold
+        scores_np_tresh = list()
+        for s in scores_np:
+            if float(s) > param.proba:
+                scores_np_tresh.append(s)
+        
+        if len(scores_np_tresh) > 0:
+            # create random color for boxes and labels
+            colors = []
+            for i in range(len(scores_np_tresh)):
+                colors.append([random.randint(0,255), random.randint(0,255), random.randint(0,255), 255])
 
-        # text label with score
-        labels = None
-        class_names = MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]).get("thing_classes")
-        if classes is not None and class_names is not None and len(class_names) > 1:
-            labels = [class_names[i] for i in classes]
-        if scores is not None:
-            if labels is None:
-                labels = ["{:.0f}%".format(s * 100) for s in scores]
-            else:
-                labels = ["{} {:.0f}%".format(l, s * 100) for l, s in zip(labels, scores)]
+            # text label with score
+            labels = None
+            class_names = MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]).get("thing_classes")
+            if classes is not None and class_names is not None and len(class_names) > 1:
+                labels = [class_names[i] for i in classes]
+            if scores_np_tresh is not None:
+                if labels is None:
+                    labels = ["{:.0f}%".format(s * 100) for s in scores_np_tresh]
+                else:
+                    labels = ["{} {:.0f}%".format(l, s * 100) for l, s in zip(labels, scores_np_tresh)]
 
-        # Show boxes + labels
-        for i in range(len(boxes_np)):
-            properties_text = PyCore.GraphicsTextProperty()
-            properties_text.color = colors[i] # start with i+1 we don't use the first color dedicated for the label mask
-            properties_text.font_size = 7
-            properties_rect = PyCore.GraphicsRectProperty()
-            properties_rect.pen_color = colors[i]
-            output_graph.addRectangle(float(boxes_np[i][0]), float(boxes_np[i][1]), float(boxes_np[i][2] - boxes_np[i][0]), float(boxes_np[i][3] - boxes_np[i][1]), properties_rect)
-            output_graph.addText(labels[i],float(boxes_np[i][0]), float(boxes_np[i][1]),properties_text)
-      
-        self.emitStepProgress()
+            # Show boxes + labels
+            for i in range(len(scores_np_tresh)):
+                properties_text = PyCore.GraphicsTextProperty()
+                properties_text.color = colors[i] # start with i+1 we don't use the first color dedicated for the label mask
+                properties_text.font_size = 7
+                properties_rect = PyCore.GraphicsRectProperty()
+                properties_rect.pen_color = colors[i]
+                output_graph.addRectangle(float(boxes_np[i][0]), float(boxes_np[i][1]), float(boxes_np[i][2] - boxes_np[i][0]), float(boxes_np[i][3] - boxes_np[i][1]), properties_rect)
+                output_graph.addText(labels[i],float(boxes_np[i][0]), float(boxes_np[i][1]),properties_text)
+        
+            self.emitStepProgress()
 
-        # keypoints
-        properties_point = PyCore.GraphicsPointProperty()
-        properties_point.pen_color = [0, 0, 0, 255]
-        properties_point.brush_color = [0, 0, 255, 255]
-        properties_point.size = 10
+            # keypoints
+            properties_point = PyCore.GraphicsPointProperty()
+            properties_point.pen_color = [0, 0, 0, 255]
+            properties_point.brush_color = [0, 0, 255, 255]
+            properties_point.size = 10
 
-        # get keypoints name if prob > Threshold
-        keypoint_names = MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]).get("keypoint_names")
-        for keypoints_obj in keypoints_np:
-	        visible_keypoints = {}
-	        for idx, kp in enumerate(keypoints_obj):
-	            x, y, prob = kp
-	            if prob > self._KEYPOINT_THRESHOLD:
-	                pts = PyCore.CPointF(float(x), float(y))
-	                output_graph.addPoint(pts, properties_point)
-	                if keypoint_names:
-	                    keypoint_name = keypoint_names[idx]
-	                    visible_keypoints[keypoint_name] = (x, y)
-			
-			# keypoints connections
-	        if MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]).get("keypoint_connection_rules"):
-	            for kpName_0, kpName_1, color in MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]).get("keypoint_connection_rules"):
-		            for kpName_0, kpName_1, color in MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]).get("keypoint_connection_rules"):
-			            if kpName_0 in visible_keypoints and kpName_1 in visible_keypoints:
-			                x0, y0 = visible_keypoints[kpName_0]
-			                x1, y1 = visible_keypoints[kpName_1]
-			                color = [x for x in color]
-			                color.append(255)
-			                properties_line = PyCore.GraphicsPolylineProperty()
-			                properties_line.pen_color = color	
-			                pts0 = PyCore.CPointF(float(x0), float(y0))
-			                pts1 = PyCore.CPointF(float(x1), float(y1))
-			                lst_points = [pts0, pts1]
-		                	output_graph.addPolyline(lst_points, properties_line)
-
+            # get keypoints name if prob > Threshold
+            keypoint_names = MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]).get("keypoint_names")
+            for keypoints_obj in keypoints_np[:len(scores_np_tresh)]:
+                visible_keypoints = {}
+                for idx, kp in enumerate(keypoints_obj):
+                    x, y, prob = kp
+                    if prob > self._KEYPOINT_THRESHOLD:
+                        pts = PyCore.CPointF(float(x), float(y))
+                        output_graph.addPoint(pts, properties_point)
+                        if keypoint_names:
+                            keypoint_name = keypoint_names[idx]
+                            visible_keypoints[keypoint_name] = (x, y)
+                
+                # keypoints connections
+                if MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]).get("keypoint_connection_rules"):
+                    for kpName_0, kpName_1, color in MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]).get("keypoint_connection_rules"):
+                        for kpName_0, kpName_1, color in MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]).get("keypoint_connection_rules"):
+                            if kpName_0 in visible_keypoints and kpName_1 in visible_keypoints:
+                                x0, y0 = visible_keypoints[kpName_0]
+                                x1, y1 = visible_keypoints[kpName_1]
+                                color = [x for x in color]
+                                color.append(255)
+                                properties_line = PyCore.GraphicsPolylineProperty()
+                                properties_line.pen_color = color	
+                                pts0 = PyCore.CPointF(float(x0), float(y0))
+                                pts1 = PyCore.CPointF(float(x1), float(y1))
+                                lst_points = [pts0, pts1]
+                                output_graph.addPolyline(lst_points, properties_line)
+        else:
+            self.emitStepProgress()
+            
 		# Set input image to output 0 
         self.forwardInputImage(0, 0)
 
